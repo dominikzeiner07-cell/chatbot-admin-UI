@@ -6,8 +6,8 @@
   <title>Chatbot Admin – Wissen hochladen</title>
   <link rel="stylesheet" href="admin.css" />
   <script>
-  window.ADMIN_UI_BACKEND_BASE = "https://chatbot-backend-iqma.onrender.com";
-</script>
+    window.ADMIN_UI_BACKEND_BASE = "https://chatbot-backend-iqma.onrender.com";
+  </script>
   <script src="admin.js" defer></script>
 </head>
 <body>
@@ -213,7 +213,7 @@ sub.example.com"></textarea>
           </div>
         </div>
 
-        <!-- NEW: Widget Customize -->
+        <!-- Widget Customize -->
         <div class="card panel" id="panel-widget">
           <h2>Widget</h2>
           <p class="sub">
@@ -256,9 +256,9 @@ sub.example.com"></textarea>
             <div id="widget_load_status" class="status info" aria-live="polite"></div>
           </div>
 
-          <!-- MOVED HERE: Widget Snippet -->
           <div class="divider"></div>
 
+          <!-- Widget Snippet -->
           <div class="section">
             <h3>Widget-Snippet</h3>
 
@@ -272,6 +272,36 @@ sub.example.com"></textarea>
             </details>
 
             <div id="widget_snippet_status" class="status" aria-live="polite"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- NEW: Legal links -->
+          <div class="section">
+            <h3>Rechtliches (Links)</h3>
+            <p class="sub" style="margin-top:-6px;">
+              Diese URLs werden im Widget hinter den Text-Links „Datenschutzerklärung“, „Impressum“ (und optional „AGB/Bedingungen“) geöffnet.
+              Im Widget selbst bleibt die Anzeige sauber (kein voller URL-Text).
+            </p>
+
+            <div class="grid-2">
+              <div>
+                <label for="widget_privacy_url">Datenschutzerklärung URL</label>
+                <input id="widget_privacy_url" type="url" placeholder="https://kunde.at/datenschutz" autocapitalize="off" spellcheck="false" />
+              </div>
+
+              <div>
+                <label for="widget_imprint_url">Impressum URL</label>
+                <input id="widget_imprint_url" type="url" placeholder="https://kunde.at/impressum" autocapitalize="off" spellcheck="false" />
+              </div>
+            </div>
+
+            <label for="widget_terms_url">AGB/Bedingungen URL (optional)</label>
+            <input id="widget_terms_url" type="url" placeholder="https://kunde.at/agb" autocapitalize="off" spellcheck="false" />
+
+            <div class="sub" style="margin-top:8px;">
+              Tipp: Falls ein Kunde keine AGB-Seite hat, kannst du das Feld leer lassen.
+            </div>
           </div>
 
           <div class="divider"></div>
