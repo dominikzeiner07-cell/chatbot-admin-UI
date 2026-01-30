@@ -362,7 +362,12 @@ const DEFAULT_WIDGET_SETTINGS = {
   header_color: "#000000",
   accent_color: "#000000",
   text_color_mode: "auto",
-  avatar_url: ""
+  avatar_url: "",
+
+  // NEW: Legal links
+  privacy_url: "",
+  imprint_url: "",
+  terms_url: ""
 };
 
 function clampHexColor(s, fallback) {
@@ -568,6 +573,10 @@ function readWidgetSettingsFromCustomer(cust) {
     s.text_color_mode = (mode === "light" || mode === "dark" || mode === "auto") ? mode : "auto";
 
     s.avatar_url = String(pick(raw, ["avatar_url", "botAvatarUrl", "bot_avatar_url", "botAvatarUrl"]) ?? "");
+    // NEW: Legal links
+s.privacy_url = String(pick(raw, ["privacy_url", "privacyUrl", "privacy_policy_url", "privacyPolicyUrl", "datenschutz_url"]) ?? "");
+s.imprint_url = String(pick(raw, ["imprint_url", "imprintUrl", "impressum_url"]) ?? "");
+s.terms_url = String(pick(raw, ["terms_url", "termsUrl", "agb_url", "conditions_url"]) ?? "");
   } else {
     if (cust?.bot_name) s.bot_name = String(cust.bot_name);
     if (cust?.user_label) s.user_label = String(cust.user_label);
@@ -587,14 +596,23 @@ function readWidgetSettingsFromCustomer(cust) {
 
     if (cust?.bot_avatar_url) s.avatar_url = String(cust.bot_avatar_url);
     if (cust?.avatar_url) s.avatar_url = String(cust.avatar_url);
+    // NEW: Legal links (fallback legacy on customer root)
+if (cust?.privacy_url) s.privacy_url = String(cust.privacy_url);
+if (cust?.imprint_url) s.imprint_url = String(cust.imprint_url);
+if (cust?.terms_url) s.terms_url = String(cust.terms_url);
   }
 
-  s.bot_name = s.bot_name.trim() || DEFAULT_WIDGET_SETTINGS.bot_name;
-  s.user_label = s.user_label.trim();
-  s.greeting_text = s.greeting_text.trim() || DEFAULT_WIDGET_SETTINGS.greeting_text;
-  s.first_message = s.first_message.trim() || DEFAULT_WIDGET_SETTINGS.first_message;
+s.bot_name = s.bot_name.trim() || DEFAULT_WIDGET_SETTINGS.bot_name;
+s.user_label = s.user_label.trim();
+s.greeting_text = s.greeting_text.trim() || DEFAULT_WIDGET_SETTINGS.greeting_text;
+s.first_message = s.first_message.trim() || DEFAULT_WIDGET_SETTINGS.first_message;
 
-  return s;
+// NEW: Legal links trims
+s.privacy_url = String(s.privacy_url || "").trim();
+s.imprint_url = String(s.imprint_url || "").trim();
+s.terms_url = String(s.terms_url || "").trim();
+
+return s;
 }
 
 function writeWidgetSettingsToForm(settings) {
@@ -608,6 +626,10 @@ function writeWidgetSettingsToForm(settings) {
   writeValueToAny(["widget_accent_color", "widget_accent"], settings.accent_color);
 
   writeValueToAny(["widget_text_color_mode"], settings.text_color_mode);
+  // NEW: Legal links
+writeValueToAny(["widget_privacy_url"], settings.privacy_url || "");
+writeValueToAny(["widget_imprint_url"], settings.imprint_url || "");
+writeValueToAny(["widget_terms_url"], settings.terms_url || "");
 
   // Ensure color UI exists + synced
   ensureWidgetColorUIs();
@@ -662,16 +684,20 @@ function readWidgetSettingsFromForm() {
   const avatar_url = String(img?.getAttribute("src") || "").trim();
 
   const s = {
-    bot_name: String(readValueFromAny(["widget_bot_name"])).trim() || DEFAULT_WIDGET_SETTINGS.bot_name,
-    user_label: String(readValueFromAny(["widget_user_label"])).trim(),
-    greeting_text: String(readValueFromAny(["widget_greeting_text", "widget_launcher_text"])).trim() || DEFAULT_WIDGET_SETTINGS.greeting_text,
-    first_message: String(readValueFromAny(["widget_first_message", "widget_bot_greeting"])).trim() || DEFAULT_WIDGET_SETTINGS.first_message,
-    header_color: header,
-    accent_color: accent,
-    text_color_mode,
-    avatar_url
-  };
+  bot_name: String(readValueFromAny(["widget_bot_name"])).trim() || DEFAULT_WIDGET_SETTINGS.bot_name,
+  user_label: String(readValueFromAny(["widget_user_label"])).trim(),
+  greeting_text: String(readValueFromAny(["widget_greeting_text", "widget_launcher_text"])).trim() || DEFAULT_WIDGET_SETTINGS.greeting_text,
+  first_message: String(readValueFromAny(["widget_first_message", "widget_bot_greeting"])).trim() || DEFAULT_WIDGET_SETTINGS.first_message,
+  header_color: header,
+  accent_color: accent,
+  text_color_mode,
+  avatar_url,
 
+  // NEW: Legal links
+  privacy_url: String(readValueFromAny(["widget_privacy_url"])).trim(),
+  imprint_url: String(readValueFromAny(["widget_imprint_url"])).trim(),
+  terms_url: String(readValueFromAny(["widget_terms_url"])).trim()
+};
   // legacy mirror nur für Raw/Preview (Backend ignoriert unknown keys sowieso)
   s.botName = s.bot_name;
   s.launcherText = s.greeting_text;
@@ -688,17 +714,23 @@ function readWidgetSettingsFromForm() {
 
 function pickCanonicalWidgetSettings(settings) {
   const s = settings && typeof settings === "object" ? settings : {};
-  return {
-    bot_name: String(s.bot_name ?? "").trim(),
-    user_label: String(s.user_label ?? "").trim(),
-    greeting_text: String(s.greeting_text ?? "").trim(),
-    first_message: String(s.first_message ?? "").trim(),
-    header_color: String(s.header_color ?? "").trim(),
-    accent_color: String(s.accent_color ?? "").trim(),
-    text_color_mode: String(s.text_color_mode ?? "auto").trim().toLowerCase(),
-    avatar_url: String(s.avatar_url ?? "").trim() || null,
-    // avatar_path wird vom Backend verwaltet
-  };
+return {
+  bot_name: String(s.bot_name ?? "").trim(),
+  user_label: String(s.user_label ?? "").trim(),
+  greeting_text: String(s.greeting_text ?? "").trim(),
+  first_message: String(s.first_message ?? "").trim(),
+  header_color: String(s.header_color ?? "").trim(),
+  accent_color: String(s.accent_color ?? "").trim(),
+  text_color_mode: String(s.text_color_mode ?? "auto").trim().toLowerCase(),
+  avatar_url: String(s.avatar_url ?? "").trim() || null,
+
+  // NEW: Legal links
+  privacy_url: String(s.privacy_url ?? "").trim() || null,
+  imprint_url: String(s.imprint_url ?? "").trim() || null,
+  terms_url: String(s.terms_url ?? "").trim() || null,
+
+  // avatar_path wird vom Backend verwaltet
+};
 }
 
 function readFileAsDataURL(file) {
@@ -1885,18 +1917,21 @@ function wireWidgetCustomizer() {
   }
 
   const hookInputs = [
-    "widget_bot_name",
-    "widget_user_label",
-    "widget_greeting_text",
-    "widget_launcher_text",
-    "widget_first_message",
-    "widget_bot_greeting",
-    "widget_header_color",
-    "widget_header_bg",
-    "widget_accent_color",
-    "widget_accent",
-    "widget_text_color_mode",
-  ];
+  "widget_bot_name",
+  "widget_user_label",
+  "widget_greeting_text",
+  "widget_launcher_text",
+  "widget_first_message",
+  "widget_bot_greeting",
+  "widget_header_color",
+  "widget_header_bg",
+  "widget_accent_color",
+  "widget_accent",
+  "widget_text_color_mode",
+  "widget_privacy_url",
+  "widget_imprint_url",
+  "widget_terms_url",
+];
   for (const id of hookInputs) {
     const el = document.getElementById(id);
     if (!el) continue;
