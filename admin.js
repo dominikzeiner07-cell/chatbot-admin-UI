@@ -832,6 +832,32 @@ async function deleteWidgetAvatar({ customerId }) {
   return { ok: false };
 }
 
+function pickLegalLinksFromSettings(settings) {
+  const privacy = String(settings?.privacy_url ?? "").trim();
+  const imprint = String(settings?.imprint_url ?? "").trim();
+  const terms   = String(settings?.terms_url ?? "").trim();
+
+  // Optional: wenn nicht gesetzt -> null, damit DB sauber bleibt
+  return {
+    privacy_url: privacy || null,
+    imprint_url: imprint || null,
+    terms_url: terms || null,
+  };
+}
+
+function stripLegalLinks(settings) {
+  const s = { ...(settings || {}) };
+  delete s.privacy_url;
+  delete s.imprint_url;
+  delete s.terms_url;
+  return s;
+}
+
+async function saveCustomerLegalLinks(customerId, legalLinks) {
+  // PATCH /admin/customers/:id  (Root-Felder)
+  return patchJSONWithAdmin(ADMIN_CUSTOMER_URL(customerId), legalLinks);
+}
+
 async function saveWidgetSettingsForCustomer(customerId) {
   const statusEl = document.getElementById("widget_status");
   if (!customerId) {
@@ -839,17 +865,23 @@ async function saveWidgetSettingsForCustomer(customerId) {
     return;
   }
 
-  const settingsRaw = readWidgetSettingsFromForm();
-  const settings = pickCanonicalWidgetSettings(settingsRaw);
+const settingsRaw = readWidgetSettingsFromForm();
+const settings = pickCanonicalWidgetSettings(settingsRaw);
+
+// Legal-Links separat als Customer-Root speichern
+const legalLinks = pickLegalLinksFromSettings(settings);
+
+// Und aus widget_settings payload rausnehmen (optional, aber sauber)
+const settingsWithoutLegal = stripLegalLinks(settings);
 
   setStatus(statusEl, "Speichere Widget-Settings …", "info");
 
   // 1) primary: PATCH /admin/customers/:id/widget-settings (body = settings)
   // 2) fallback: PATCH /admin/customers/:id (body = { widget_settings: settings })
   const attempts = [
-    { url: WIDGET_SETTINGS_SAVE_ENDPOINTS(customerId)[0], payload: settings, mode: "direct" },
-    { url: WIDGET_SETTINGS_SAVE_ENDPOINTS(customerId)[1], payload: { widget_settings: settings }, mode: "wrapped" },
-  ];
+  { url: WIDGET_SETTINGS_SAVE_ENDPOINTS(customerId)[0], payload: settingsWithoutLegal, mode: "direct" },
+  { url: WIDGET_SETTINGS_SAVE_ENDPOINTS(customerId)[1], payload: { widget_settings: settingsWithoutLegal }, mode: "wrapped" },
+];
 
   let saveOk = false;
   let lastWsFromResponse = null;
@@ -893,7 +925,25 @@ async function saveWidgetSettingsForCustomer(customerId) {
       // try next
     }
   }
+// Jetzt Legal-Links separat speichern (Customer Root)
+try {
+  const resLegal = await saveCustomerLegalLinks(customerId, legalLinks);
+  if (resLegal._noFetch) {
+    setStatus(statusEl, "Kein Admin-Token gesetzt (Legal-Links).", "error");
+    return;
+  }
+  const dataLegal = await resLegal.json().catch(() => ({}));
+  if (!resLegal.ok) {
+    setStatus(statusEl, dataLegal?.error || `Fehler beim Speichern der Legal-Links (HTTP ${resLegal.status}).`, "error");
+    return;
+  }
 
+  const updatedCustomer = dataLegal?.customer || dataLegal;
+  if (updatedCustomer?.id) cacheUpsert(updatedCustomer);
+} catch {
+  setStatus(statusEl, "Fehler beim Speichern der Legal-Links (Netzwerk).", "error");
+  return;
+}
   if (!saveOk) {
     setStatus(statusEl, "Fehler beim Speichern (Endpoints / Admin-Token prüfen).", "error");
     return;
