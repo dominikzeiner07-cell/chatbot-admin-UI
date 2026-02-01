@@ -835,7 +835,7 @@ async function deleteWidgetAvatar({ customerId }) {
 async function saveWidgetSettingsForCustomer(customerId) {
   const statusEl = document.getElementById("widget_status");
   if (!customerId) {
-    setStatus(statusEl, "Kein Admin-Token gesetzt.", "error");
+    setStatus(statusEl, "Kein Customer ausgewählt.", "error");
     return;
   }
 
@@ -850,6 +850,9 @@ async function saveWidgetSettingsForCustomer(customerId) {
     { url: WIDGET_SETTINGS_SAVE_ENDPOINTS(customerId)[0], payload: settings, mode: "direct" },
     { url: WIDGET_SETTINGS_SAVE_ENDPOINTS(customerId)[1], payload: { widget_settings: settings }, mode: "wrapped" },
   ];
+
+  let saveOk = false;
+  let lastWsFromResponse = null;
 
   for (const a of attempts) {
     try {
@@ -870,6 +873,8 @@ async function saveWidgetSettingsForCustomer(customerId) {
         data?.settings ||
         null;
 
+      lastWsFromResponse = ws;
+
       // Cache updaten, falls Customer kommt
       const updatedCustomer = data?.customer || null;
       if (updatedCustomer?.id) {
@@ -882,20 +887,48 @@ async function saveWidgetSettingsForCustomer(customerId) {
         }
       }
 
-      // UI refresh
-      if (ws && typeof ws === "object") {
-        const mergedForForm = readWidgetSettingsFromCustomer({ widget_settings: ws });
-        writeWidgetSettingsToForm(mergedForForm);
-      }
-
-      setStatus(statusEl, "Widget-Settings gespeichert.", "success");
-      return;
+      saveOk = true;
+      break;
     } catch {
       // try next
     }
   }
 
-  setStatus(statusEl, "Fehler beim Speichern (Endpoints / Admin-Token prüfen).", "error");
+  if (!saveOk) {
+    setStatus(statusEl, "Fehler beim Speichern (Endpoints / Admin-Token prüfen).", "error");
+    return;
+  }
+
+  // Ab hier: Der wichtige Teil.
+  // Nach erfolgreichem Save IMMER frisch vom Backend laden und exakt diesen Stand ins Formular schreiben.
+  setStatus(statusEl, "Gespeichert. Lade finalen Stand vom Backend …", "info");
+
+  const fresh = await fetchCustomerFull(customerId);
+  if (fresh.ok && fresh.customer) {
+    cacheUpsert(fresh.customer);
+
+    // Widget-Tab Inputs (falls vorhanden) ebenfalls aktualisieren
+    writeValueToAny(["widget_customer_id"], fresh.customer?.id || customerId);
+    writeValueToAny(["widget_widget_key"], fresh.customer?.widget_key || "");
+
+    // Form aus dem echten Customer-Objekt befüllen
+    const wsMerged = readWidgetSettingsFromCustomer(fresh.customer);
+    writeWidgetSettingsToForm(wsMerged);
+
+    // Snippet Preview aktualisieren
+    setWidgetSnippetPreview(fresh.customer?.widget_key || "");
+
+    setStatus(statusEl, "Widget-Settings gespeichert (Backend-Stand geladen).", "success");
+    return;
+  }
+
+  // Fallback, falls GET nicht klappt: wenigstens Response-WS ins Formular schreiben
+  if (lastWsFromResponse && typeof lastWsFromResponse === "object") {
+    const wsMerged = readWidgetSettingsFromCustomer({ widget_settings: lastWsFromResponse });
+    writeWidgetSettingsToForm(wsMerged);
+  }
+
+  setStatus(statusEl, "Widget-Settings gespeichert (Reload fehlgeschlagen, Fallback verwendet).", "success");
 }
 
 function getSelectedCustomerId() {
