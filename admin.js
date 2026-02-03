@@ -602,6 +602,16 @@ if (cust?.imprint_url) s.imprint_url = String(cust.imprint_url);
 if (cust?.terms_url) s.terms_url = String(cust.terms_url);
   }
 
+  // Root-Felder (Customer) sollen IMMER gewinnen (wir speichern privacy_url am Root)
+if (typeof cust?.privacy_url !== "undefined" && cust?.privacy_url !== null) {
+  s.privacy_url = String(cust.privacy_url);
+}
+if (typeof cust?.imprint_url !== "undefined" && cust?.imprint_url !== null) {
+  s.imprint_url = String(cust.imprint_url);
+}
+if (typeof cust?.terms_url !== "undefined" && cust?.terms_url !== null) {
+  s.terms_url = String(cust.terms_url);
+}
 s.bot_name = s.bot_name.trim() || DEFAULT_WIDGET_SETTINGS.bot_name;
 s.user_label = s.user_label.trim();
 s.greeting_text = s.greeting_text.trim() || DEFAULT_WIDGET_SETTINGS.greeting_text;
@@ -628,8 +638,7 @@ function writeWidgetSettingsToForm(settings) {
   writeValueToAny(["widget_text_color_mode"], settings.text_color_mode);
   // NEW: Legal links
 writeValueToAny(["widget_privacy_url"], settings.privacy_url || "");
-writeValueToAny(["widget_imprint_url"], settings.imprint_url || "");
-writeValueToAny(["widget_terms_url"], settings.terms_url || "");
+
 
   // Ensure color UI exists + synced
   ensureWidgetColorUIs();
@@ -695,8 +704,7 @@ function readWidgetSettingsFromForm() {
 
   // NEW: Legal links
   privacy_url: String(readValueFromAny(["widget_privacy_url"])).trim(),
-  imprint_url: String(readValueFromAny(["widget_imprint_url"])).trim(),
-  terms_url: String(readValueFromAny(["widget_terms_url"])).trim()
+
 };
   // legacy mirror nur für Raw/Preview (Backend ignoriert unknown keys sowieso)
   s.botName = s.bot_name;
@@ -834,22 +842,16 @@ async function deleteWidgetAvatar({ customerId }) {
 
 function pickLegalLinksFromSettings(settings) {
   const privacy = String(settings?.privacy_url ?? "").trim();
-  const imprint = String(settings?.imprint_url ?? "").trim();
-  const terms   = String(settings?.terms_url ?? "").trim();
 
   // Optional: wenn nicht gesetzt -> null, damit DB sauber bleibt
   return {
     privacy_url: privacy || null,
-    imprint_url: imprint || null,
-    terms_url: terms || null,
   };
 }
 
 function stripLegalLinks(settings) {
   const s = { ...(settings || {}) };
   delete s.privacy_url;
-  delete s.imprint_url;
-  delete s.terms_url;
   return s;
 }
 
@@ -2012,8 +2014,7 @@ function wireWidgetCustomizer() {
   "widget_accent",
   "widget_text_color_mode",
   "widget_privacy_url",
-  "widget_imprint_url",
-  "widget_terms_url",
+
 ];
   for (const id of hookInputs) {
     const el = document.getElementById(id);
