@@ -204,11 +204,33 @@ sub.example.com"></textarea>
               <label for="cust_system_prompt">system_prompt</label>
               <textarea id="cust_system_prompt" rows="6" placeholder="Optionaler System-Prompt..."></textarea>
 
-              <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                <button class="btn" id="cust_save" type="button">Änderungen speichern</button>
-              </div>
+             <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+  <button class="btn" id="cust_save" type="button">Änderungen speichern</button>
 
-              <div id="cust_edit_status" class="status" aria-live="polite"></div>
+  <!-- NEW: Checkout-URL Button + Copy -->
+  <button class="btn btn-ghost" id="cust_checkout_btn" type="button">
+    Checkout-URL erzeugen
+  </button>
+  <button class="btn btn-ghost" id="cust_checkout_copy" type="button">
+    Link kopieren
+  </button>
+</div>
+
+<!-- NEW: Feld für letzte erzeugte Checkout-URL -->
+<div style="margin-top:.5rem;">
+  <label for="cust_checkout_url">Letzte erzeugte Checkout-URL</label>
+  <input
+    id="cust_checkout_url"
+    type="url"
+    readonly
+    placeholder="Noch kein Checkout-Link erzeugt"
+    autocapitalize="off"
+    spellcheck="false"
+    style="width:100%;"
+  />
+</div>
+
+<div id="cust_edit_status" class="status" aria-live="polite"></div>
             </form>
           </div>
         </div>

@@ -95,6 +95,13 @@ const ANSWERS_ENDPOINT_CANDIDATES = [
   `${BACKEND_BASE}/answers`,
 ];
 
+// Stripe Checkout endpoints candidates (per-customer)
+const CHECKOUT_URL_ENDPOINTS = (id) => ([
+  `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}/checkout-url`, // bevorzugt
+  `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}/checkout`,
+  `${BACKEND_BASE}/admin/checkout/${encodeURIComponent(id)}`,
+]);
+
 /* ----------------------------------------------
    Widget Customize / Avatar / Settings endpoints
    (Backend in server.js: PATCH /admin/customers/:id/widget-settings
@@ -1651,6 +1658,102 @@ async function regenerateWidgetKey() {
   setStatus(statusEl, "Konnte Widget-Key nicht regenerieren (Endpoint fehlt?).", "error");
 }
 
+async function createCheckoutForSelectedCustomer() {
+  const idInput = document.getElementById("cust_id");
+  const statusEl = document.getElementById("cust_edit_status");
+  const urlInput = document.getElementById("cust_checkout_url");
+  const planEl   = document.getElementById("cust_plan");
+
+  const id = idInput?.value?.trim();
+  if (!id) {
+    setStatus(statusEl, "Kein Customer ausgewählt.", "error");
+    return;
+  }
+
+  const plan = (planEl?.value || "").trim();
+  if (!plan) {
+    setStatus(statusEl, "Plan ist leer – bitte zuerst einen Plan wählen und speichern.", "error");
+    return;
+  }
+
+  setStatus(statusEl, "Erzeuge Checkout-Session …", "info");
+  if (urlInput) urlInput.value = "";
+
+  // Für später könnten wir hier success_url / cancel_url mitsenden,
+  // vorerst lassen wir das Backend Defaults verwenden.
+  const payload = {};
+
+  for (const url of CHECKOUT_URL_ENDPOINTS(id)) {
+    try {
+      const res = await postJSONWithAdmin(url, payload);
+      if (res._noFetch) {
+        setStatus(statusEl, "Kein Admin-Token gesetzt.", "error");
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Nächsten Endpoint-Kandidaten probieren
+        continue;
+      }
+
+      const checkoutUrl =
+        data.url ||
+        data.checkout_url ||
+        data.checkoutUrl ||
+        (data.session && (data.session.url || data.session.checkout_url)) ||
+        "";
+
+      if (!checkoutUrl) {
+        setStatus(statusEl, "Backend-Response ohne URL – bitte Endpoint prüfen.", "error");
+        return;
+      }
+
+      if (urlInput) urlInput.value = checkoutUrl;
+
+      // Optional: Customer frisch laden (falls Backend z.B. stripe_customer_id gesetzt hat)
+      try {
+        const fresh = await fetchCustomerFull(id);
+        if (fresh.ok && fresh.customer) {
+          cacheUpsert(fresh.customer);
+          renderCustomerIntoEditor(fresh.customer);
+        }
+      } catch {
+        // nicht kritisch
+      }
+
+      setStatus(
+        statusEl,
+        "Checkout-URL erzeugt. Du kannst den Link jetzt kopieren und an den Kunden schicken.",
+        "success"
+      );
+      return;
+    } catch {
+      // nächster Kandidat
+    }
+  }
+
+  setStatus(statusEl, "Konnte keinen Checkout-Endpoint erreichen (server.js-Route prüfen).", "error");
+}
+
+async function copyCheckoutUrlToClipboard() {
+  const statusEl = document.getElementById("cust_edit_status");
+  const urlInput = document.getElementById("cust_checkout_url");
+  const url = (urlInput?.value || "").trim();
+
+  if (!url) {
+    setStatus(statusEl, "Kein Checkout-Link vorhanden – erst erzeugen.", "error");
+    return;
+  }
+
+  const ok = await copyToClipboard(url);
+  setStatus(
+    statusEl,
+    ok ? "Checkout-Link kopiert." : "Konnte Link nicht kopieren.",
+    ok ? "success" : "error"
+  );
+}
+
 /* ----------------------------------------------
    Stats (Totals + Daily)
 ---------------------------------------------- */
@@ -2201,6 +2304,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const custCopySnippet = document.getElementById("cust_copy_snippet"); // legacy (may be removed in HTML)
   const custRegen = document.getElementById("cust_regen_widget_key");
 
+  // NEW: Checkout-Buttons
+  const custCheckoutBtn = document.getElementById("cust_checkout_btn");
+  const custCheckoutCopy = document.getElementById("cust_checkout_copy");
+
   const custCreateBtn = document.getElementById("cust_create_btn");
   const custCreateClear = document.getElementById("cust_create_clear");
 
@@ -2247,6 +2354,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (custSave) custSave.addEventListener("click", saveSelectedCustomer);
+
+    if (custCheckoutBtn) {
+    custCheckoutBtn.addEventListener("click", createCheckoutForSelectedCustomer);
+  }
+  if (custCheckoutCopy) {
+    custCheckoutCopy.addEventListener("click", copyCheckoutUrlToClipboard);
+  }
 
   if (custCreateBtn) custCreateBtn.addEventListener("click", createCustomer);
   if (custCreateClear) custCreateClear.addEventListener("click", () => {
