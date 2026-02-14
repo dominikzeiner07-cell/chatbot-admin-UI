@@ -1362,6 +1362,18 @@ function renderCustomerIntoEditor(c) {
 
   set("cust_system_prompt", c?.system_prompt ?? "");
 
+  // NEU: Subscription-Felder aus Supabase/Backend anzeigen
+  const subStatus = c?.subscription_status ?? "";
+  // je nach Backend-Property-Namen, wir sind tolerant:
+  const cpeRaw =
+    c?.subscription_current_period_end ??
+    c?.current_period_end ??
+    null;
+  const cpeFormatted = cpeRaw ? formatTimeMaybe(cpeRaw) : "";
+
+  set("cust_subscription_status", subStatus);
+  set("cust_subscription_current_period_end", cpeFormatted);
+
   // (Legacy) Customers-Tab Vorschau (falls Element noch existiert)
   const prev = document.getElementById("cust_snippet_preview");
   if (prev) {
@@ -1369,7 +1381,11 @@ function renderCustomerIntoEditor(c) {
     prev.textContent = wk ? buildWidgetSnippet({ widgetKey: wk }) : "";
   }
 
-  updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" });
+  updateModelHint({
+    planElId: "cust_plan",
+    modelElId: "cust_model",
+    hintElId: "cust_model_hint",
+  });
 
   // Widget panel (falls vorhanden): syncen
   const panelWidget = document.getElementById("panel-widget");

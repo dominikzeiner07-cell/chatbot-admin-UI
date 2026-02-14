@@ -200,7 +200,31 @@ example.com
 sub.example.com"></textarea>
                 </div>
               </div>
+              <div class="grid-2">
+                <div>
+                  <label for="cust_subscription_status">Subscription Status (Stripe)</label>
+                  <input
+                    id="cust_subscription_status"
+                    type="text"
+                    readonly
+                    placeholder="(kein Stripe-Abo)"
+                  />
+                </div>
+                <div>
+                  <label for="cust_subscription_current_period_end">current_period_end</label>
+                  <input
+                    id="cust_subscription_current_period_end"
+                    type="text"
+                    readonly
+                    placeholder="–"
+                  />
+                  <div class="sub" style="margin-top:4px;">
+                    Gesteuert nur über Stripe/Webhooks.
+                  </div>
+                </div>
+              </div>
 
+              <label for="cust_system_prompt">system_prompt</label>
               <label for="cust_system_prompt">system_prompt</label>
               <textarea id="cust_system_prompt" rows="6" placeholder="Optionaler System-Prompt..."></textarea>
 
