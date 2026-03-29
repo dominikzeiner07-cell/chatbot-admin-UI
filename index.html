@@ -223,6 +223,11 @@ sub.example.com"></textarea>
                   </div>
                 </div>
               </div>
+              <div class="storage-card" id="cust_storage_card">
+  <div class="storage-label">Speicher</div>
+  <div class="storage-main" id="cust_storage_line">–</div>
+  <div class="storage-sub" id="cust_storage_hint">Noch nicht geladen.</div>
+</div>
 
               <label for="cust_system_prompt">system_prompt</label>
               <label for="cust_system_prompt">system_prompt</label>
@@ -642,6 +647,11 @@ sub.example.com"></textarea>
           <form id="upload-form" autocomplete="off" novalidate>
             <label for="customer_id">customer_id</label>
             <input id="customer_id" name="customer_id" type="text" value="demo-1" required autocapitalize="off" spellcheck="false" />
+            <div class="storage-card" id="upload_storage_card">
+  <div class="storage-label">Speicher dieses Customers</div>
+  <div class="storage-main" id="upload_storage_line">–</div>
+  <div class="storage-sub" id="upload_storage_hint">Noch nicht geladen.</div>
+</div>
 
             <label for="content">Inhalt / FAQ / Öffnungszeiten</label>
             <textarea id="content" name="content" rows="6" required placeholder="z.B.&#10;Montag–Freitag 9–18 Uhr&#10;Samstag 10–14 Uhr&#10;Sonntag geschlossen" autocapitalize="off" spellcheck="false"></textarea>

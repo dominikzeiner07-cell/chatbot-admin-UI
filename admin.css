@@ -157,6 +157,48 @@ textarea {
 .status.error { color: #b91c1c; }
 .status.info { color: #374151; }
 
+.storage-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  background: #f9fafb;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.storage-card.tone-info {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: #f9fafb;
+}
+
+.storage-card.tone-success {
+  border-color: rgba(21, 128, 61, 0.18);
+  background: #f0fdf4;
+}
+
+.storage-card.tone-error {
+  border-color: rgba(185, 28, 28, 0.18);
+  background: #fef2f2;
+}
+
+.storage-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.storage-main {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.storage-sub {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.45;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;

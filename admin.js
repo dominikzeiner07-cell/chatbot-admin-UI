@@ -65,6 +65,7 @@ const PURGE_URL    = `${BACKEND_BASE}/purge`;
 // Customer Management
 const ADMIN_CUSTOMERS_URL = `${BACKEND_BASE}/admin/customers`;
 const ADMIN_CUSTOMER_URL  = (id) => `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}`;
+const ADMIN_CUSTOMER_STORAGE_URL = (id) => `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}/storage`;
 
 // Widget-Key regenerate endpoint candidates
 const WIDGET_REGEN_ENDPOINTS = (id) => ([
@@ -356,6 +357,113 @@ function formatTimeMaybe(ts) {
   } catch {
     return String(ts);
   }
+}
+
+function getStorageUi(scope) {
+  if (scope === "customer") {
+    return {
+      card: document.getElementById("cust_storage_card"),
+      line: document.getElementById("cust_storage_line"),
+      hint: document.getElementById("cust_storage_hint"),
+    };
+  }
+
+  if (scope === "upload") {
+    return {
+      card: document.getElementById("upload_storage_card"),
+      line: document.getElementById("upload_storage_line"),
+      hint: document.getElementById("upload_storage_hint"),
+    };
+  }
+
+  return { card: null, line: null, hint: null };
+}
+
+function renderStorageBox(scope, storage, tone = "info", message = "") {
+  const ui = getStorageUi(scope);
+  if (!ui.line || !ui.hint) return;
+
+  const card = ui.card;
+  if (card) {
+    card.classList.remove("tone-info", "tone-success", "tone-error");
+    card.classList.add(`tone-${tone}`);
+  }
+
+  if (!storage || typeof storage !== "object") {
+    ui.line.textContent = "–";
+    ui.hint.textContent = message || "Noch nicht geladen.";
+    return;
+  }
+
+  const limit = storage.limit;
+  const current = Number(storage.current ?? 0);
+  const remaining =
+    typeof storage.remaining !== "undefined"
+      ? storage.remaining
+      : (limit == null ? null : Math.max(0, limit - current));
+
+  ui.line.textContent =
+    limit == null
+      ? `${current} Chunks`
+      : `${current} / ${limit} Chunks`;
+
+  const parts = [];
+  if (storage.plan) parts.push(`Plan: ${storage.plan}`);
+  if (remaining != null) parts.push(`Verbleibend: ${remaining}`);
+  if (Number.isFinite(storage.incoming)) parts.push(`Neuer Upload: ${storage.incoming}`);
+  if (Number.isFinite(storage.projected)) parts.push(`Nach Upload: ${storage.projected}`);
+
+  ui.hint.textContent = message || parts.join(" · ") || "Speicherstand geladen.";
+}
+
+async function fetchCustomerStorage(customerId) {
+  if (!customerId) return { ok: false, error: "missing_customer_id" };
+
+  const res = await getJSONWithAdmin(ADMIN_CUSTOMER_STORAGE_URL(customerId));
+  if (res._noFetch) return { ok: false, error: "Kein Admin-Token gesetzt." };
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: data?.error || `HTTP ${res.status}`,
+    };
+  }
+
+  return {
+    ok: true,
+    storage: data?.storage || data,
+  };
+}
+
+async function loadStorageIntoScope(scope, customerId) {
+  if (!customerId) {
+    renderStorageBox(scope, null, "info", "Kein Customer ausgewählt.");
+    return;
+  }
+
+  renderStorageBox(scope, null, "info", "Lade Speicherstand …");
+
+  const r = await fetchCustomerStorage(customerId);
+  if (!r.ok) {
+    renderStorageBox(scope, null, "error", r.error || "Konnte Speicherstand nicht laden.");
+    return;
+  }
+
+  renderStorageBox(scope, r.storage, "success");
+}
+
+async function syncStoragePanels(customerId) {
+  if (!customerId) {
+    renderStorageBox("customer", null, "info", "Kein Customer ausgewählt.");
+    renderStorageBox("upload", null, "info", "Kein Customer ausgewählt.");
+    return;
+  }
+
+  await Promise.all([
+    loadStorageIntoScope("customer", customerId),
+    loadStorageIntoScope("upload", customerId),
+  ]);
 }
 
 /* ----------------------------------------------
@@ -1499,12 +1607,15 @@ async function loadCustomersList({ keepSelection = true } = {}) {
     refreshWidgetPicker({ keepSelection: true });
 
     if (selectEl.value) {
-      const full = await ensureSelectedCustomerFull();
-      renderCustomerIntoEditor(full || {});
-    } else {
-      renderCustomerIntoEditor({});
-      updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" });
-    }
+  const full = await ensureSelectedCustomerFull();
+  renderCustomerIntoEditor(full || {});
+  await syncStoragePanels(selectEl.value);
+} else {
+  renderCustomerIntoEditor({});
+  renderStorageBox("customer", null, "info", "Kein Customer ausgewählt.");
+  renderStorageBox("upload", null, "info", "Kein Customer ausgewählt.");
+  updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" });
+}
   } catch {
     setStatus(statusEl, "Keine Verbindung zum Backend oder Endpoint fehlt.", "error");
   }
@@ -1547,9 +1658,10 @@ async function saveSelectedCustomer() {
 
     setStatus(statusEl, "Gespeichert.", "success");
 
-    await loadCustomersList({ keepSelection: true });
-    const full = await ensureSelectedCustomerFull();
-    renderCustomerIntoEditor(full || updated || {});
+   await loadCustomersList({ keepSelection: true });
+const full = await ensureSelectedCustomerFull();
+renderCustomerIntoEditor(full || updated || {});
+await syncStoragePanels(id);
   } catch {
     setStatus(statusEl, "Keine Verbindung zum Backend oder Endpoint fehlt.", "error");
   }
@@ -1599,14 +1711,16 @@ async function createCustomer() {
     const sel = document.getElementById("cust_select");
     if (sel) sel.value = created.id;
 
-    const full = await ensureSelectedCustomerFull();
-    renderCustomerIntoEditor(full || created);
+const full = await ensureSelectedCustomerFull();
+renderCustomerIntoEditor(full || created);
 
-    fillAllCustomerIdInputs(created.id);
-    refreshAllExtraPickers();
-    refreshStatsPicker({ keepSelection: true });
-    refreshAnswersPicker({ keepSelection: true });
-    refreshWidgetPicker({ keepSelection: true });
+fillAllCustomerIdInputs(created.id);
+refreshAllExtraPickers();
+refreshStatsPicker({ keepSelection: true });
+refreshAnswersPicker({ keepSelection: true });
+refreshWidgetPicker({ keepSelection: true });
+
+await syncStoragePanels(created.id);
   } catch {
     setStatus(statusEl, "Keine Verbindung zum Backend oder Endpoint fehlt.", "error");
   } finally {
@@ -2309,6 +2423,31 @@ document.addEventListener("DOMContentLoaded", () => {
   wireAnswersPicker();
   wireWidgetPicker();
 
+const uploadCustomerInput = document.getElementById("customer_id");
+const uploadCustomerSelect = document.getElementById("pick_upload_select");
+
+if (uploadCustomerSelect) {
+  uploadCustomerSelect.addEventListener("change", async () => {
+    const id = (uploadCustomerSelect.value || "").trim();
+    if (!id) {
+      renderStorageBox("upload", null, "info", "Kein Customer ausgewählt.");
+      return;
+    }
+    await loadStorageIntoScope("upload", id);
+  });
+}
+
+if (uploadCustomerInput) {
+  uploadCustomerInput.addEventListener("change", async () => {
+    const id = (uploadCustomerInput.value || "").trim();
+    if (!id) {
+      renderStorageBox("upload", null, "info", "Kein Customer ausgewählt.");
+      return;
+    }
+    await loadStorageIntoScope("upload", id);
+  });
+}
+
   /* -------------------------
      Customers wiring
   ------------------------- */
@@ -2339,17 +2478,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (custSelect) {
-    custSelect.addEventListener("change", async () => {
-      const id = getSelectedCustomerId();
-      if (!id) {
-        renderCustomerIntoEditor({});
-        return;
-      }
-      const full = await ensureSelectedCustomerFull();
-      renderCustomerIntoEditor(full || {});
-    });
-  }
+if (custSelect) {
+  custSelect.addEventListener("change", async () => {
+    const id = getSelectedCustomerId();
+    if (!id) {
+      renderCustomerIntoEditor({});
+      renderStorageBox("customer", null, "info", "Kein Customer ausgewählt.");
+      return;
+    }
+    const full = await ensureSelectedCustomerFull();
+    renderCustomerIntoEditor(full || {});
+    await syncStoragePanels(id);
+  });
+}
 
   if (custApply) {
     custApply.addEventListener("click", () => {
@@ -2555,10 +2696,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const data = await res.json().catch(() => ({}));
 
-        if (!res.ok) {
-          setStatus(statusEl, data?.error || `Fehler beim Hochladen. (HTTP ${res.status})`, "error");
-          return;
-        }
+if (!res.ok) {
+  if (res.status === 409 && data?.error === "STORAGE_LIMIT_REACHED") {
+    renderStorageBox(
+      "upload",
+      data?.storage || null,
+      "error",
+      "Speicherlimit erreicht. Dieser Upload wurde nicht gespeichert."
+    );
+
+    const selectedCustomerId = getSelectedCustomerId();
+    if (selectedCustomerId && selectedCustomerId === customerId) {
+      renderStorageBox(
+        "customer",
+        data?.storage || null,
+        "error",
+        "Speicherlimit erreicht. Dieser Upload wurde nicht gespeichert."
+      );
+    }
+
+    setStatus(statusEl, "Speicherlimit erreicht.", "error");
+    return;
+  }
+
+  setStatus(statusEl, data?.error || `Fehler beim Hochladen. (HTTP ${res.status})`, "error");
+  return;
+}
 
         if (contentHash) {
           const recent = loadRecentHashes(customerId);
@@ -2566,7 +2729,16 @@ document.addEventListener("DOMContentLoaded", () => {
           saveRecentHashes(customerId, recent);
         }
 
-        setStatus(statusEl, data?.message || "Gespeichert.", "success");
+        if (data?.storage) {
+  renderStorageBox("upload", data.storage, "success");
+
+  const selectedCustomerId = getSelectedCustomerId();
+  if (selectedCustomerId && selectedCustomerId === customerId) {
+    renderStorageBox("customer", data.storage, "success");
+  }
+}
+
+setStatus(statusEl, data?.message || "Gespeichert.", "success");
       } catch {
         setStatus(statusEl, "Keine Verbindung zum Backend (läuft es?).", "error");
       } finally {
