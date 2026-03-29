@@ -50,10 +50,12 @@ function resolveInitialTheme() {
 }
 
 function applyTheme(theme) {
-  const root = document.documentElement;
+  const body = document.body;
   const next = theme === "dark" ? "dark" : "light";
 
-  root.setAttribute("data-theme", next);
+  if (body) {
+    body.setAttribute("data-theme", next);
+  }
 
   const btn = document.getElementById("theme-toggle");
   if (btn) {
@@ -62,7 +64,7 @@ function applyTheme(theme) {
 }
 
 function toggleTheme() {
-  const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const current = document.body.getAttribute("data-theme") === "dark" ? "dark" : "light";
   const next = current === "dark" ? "light" : "dark";
   setStoredTheme(next);
   applyTheme(next);
