@@ -6,6 +6,7 @@
 ---------------------------------------------- */
 const DEFAULT_BACKEND_BASE = "https://chatbot-backend-iqma.onrender.com";
 const BACKEND_BASE_KEY = "admin_ui_backend_base";
+const ADMIN_THEME_KEY = "admin_ui_theme";
 
 function normalizeBaseUrl(u) {
   let s = String(u || "").trim();
@@ -27,6 +28,55 @@ function getStoredBackendBase() {
 }
 function setStoredBackendBase(base) {
   try { localStorage.setItem(BACKEND_BASE_KEY, base); } catch {}
+}
+
+function getStoredTheme() {
+  try { return localStorage.getItem(ADMIN_THEME_KEY) || ""; } catch { return ""; }
+}
+
+function setStoredTheme(theme) {
+  try { localStorage.setItem(ADMIN_THEME_KEY, theme); } catch {}
+}
+
+function resolveInitialTheme() {
+  const stored = getStoredTheme();
+  if (stored === "dark" || stored === "light") return stored;
+
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const next = theme === "dark" ? "dark" : "light";
+
+  root.setAttribute("data-theme", next);
+
+  const btn = document.getElementById("theme-toggle");
+  if (btn) {
+    btn.textContent = next === "dark" ? "Light Mode" : "Dark Mode";
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const next = current === "dark" ? "light" : "dark";
+  setStoredTheme(next);
+  applyTheme(next);
+}
+
+function initThemeToggle() {
+  applyTheme(resolveInitialTheme());
+
+  const btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    toggleTheme();
+  });
 }
 
 const BACKEND_BASE = (() => {
@@ -2360,6 +2410,8 @@ function wireWidgetCustomizer() {
    Init
 ---------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
+  initThemeToggle();
+
   // Admin-Token via URL setzen (?admin_token=...)
   try {
     const sp = new URLSearchParams(location.search);

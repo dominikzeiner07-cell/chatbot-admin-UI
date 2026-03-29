@@ -14,13 +14,26 @@
   <main class="page">
     <div class="admin-container">
 
+      <header class="admin-topbar">
+        <div class="admin-topbar__text">
+          <div class="admin-kicker">Zeiner Systems</div>
+          <h1 class="admin-title">Chatbot Admin Control Center</h1>
+          <p class="admin-topbar__sub">
+            Kunden, Widget, Wissen, Crawling, Speicher, Stats und Antworten zentral verwalten.
+          </p>
+        </div>
+
+        <div class="admin-topbar__actions">
+          <button id="theme-toggle" class="btn btn-ghost" type="button" aria-label="Dark Mode umschalten">
+            Dark Mode
+          </button>
+        </div>
+      </header>
+
       <nav class="tabs">
         <button class="tab-btn active" data-panel="panel-token">Admin-Token</button>
         <button class="tab-btn" data-panel="panel-customers">Customers</button>
-
-        <!-- NEW -->
         <button class="tab-btn" data-panel="panel-widget">Widget</button>
-
         <button class="tab-btn" data-panel="panel-stats">Stats</button>
         <button class="tab-btn" data-panel="panel-answers">Antworten</button>
         <button class="tab-btn" data-panel="panel-upload">Dokument hochladen</button>
@@ -229,7 +242,6 @@ sub.example.com"></textarea>
   <div class="storage-sub" id="cust_storage_hint">Noch nicht geladen.</div>
 </div>
 
-              <label for="cust_system_prompt">system_prompt</label>
               <label for="cust_system_prompt">system_prompt</label>
               <textarea id="cust_system_prompt" rows="6" placeholder="Optionaler System-Prompt..."></textarea>
 
@@ -621,24 +633,24 @@ sub.example.com"></textarea>
 
         <!-- Upload -->
         <div class="card panel" id="panel-upload">
-          <h1>Wissens-Dokument hochladen</h1>
+          <h2>Wissens-Dokument hochladen</h2>
           <p class="sub">
             Dieses Formular sendet Inhalte an dein Backend (<code>/ingest</code>) und speichert sie in Supabase.
           </p>
 
-          <div class="section" style="margin-bottom:12px;">
+          <div class="section">
             <h3>Customer auswählen</h3>
-            <div class="grid-2" style="align-items:end;">
+            <div class="grid-2 admin-inline-end">
               <div>
                 <label for="pick_upload_search">Suche</label>
                 <input id="pick_upload_search" type="text" placeholder="Name oder ID …" />
 
-                <label for="pick_upload_select" style="margin-top:10px;">Customer</label>
+                <label for="pick_upload_select" class="field-gap-top">Customer</label>
                 <select id="pick_upload_select">
                   <option value="">– auswählen –</option>
                 </select>
               </div>
-              <div class="sub" style="margin-top:22px;">
+              <div class="sub admin-inline-note">
                 Auswahl füllt <code>customer_id</code> automatisch aus.
               </div>
             </div>
