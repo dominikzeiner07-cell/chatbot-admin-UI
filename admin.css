@@ -428,6 +428,14 @@ body[data-theme="dark"] .btn {
   box-shadow: var(--shadow-sm);
 }
 
+#cust_monthly_usage_card {
+  margin-top: 10px;
+}
+
+#stats_monthly_usage_card {
+  margin-top: 14px;
+}
+
 .storage-card.tone-info {
   border-color: var(--storage-info-border);
   background: var(--storage-info-bg);

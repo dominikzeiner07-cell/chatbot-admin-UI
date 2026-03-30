@@ -118,6 +118,8 @@ const PURGE_URL    = `${BACKEND_BASE}/purge`;
 const ADMIN_CUSTOMERS_URL = `${BACKEND_BASE}/admin/customers`;
 const ADMIN_CUSTOMER_URL  = (id) => `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}`;
 const ADMIN_CUSTOMER_STORAGE_URL = (id) => `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}/storage`;
+const ADMIN_CUSTOMER_MONTHLY_USAGE_URL = (id) =>
+  `${BACKEND_BASE}/admin/customers/${encodeURIComponent(id)}/monthly-usage`;
 
 // Widget-Key regenerate endpoint candidates
 const WIDGET_REGEN_ENDPOINTS = (id) => ([
@@ -431,6 +433,26 @@ function getStorageUi(scope) {
   return { card: null, line: null, hint: null };
 }
 
+function getMonthlyUsageUi(scope) {
+  if (scope === "customer") {
+    return {
+      card: document.getElementById("cust_monthly_usage_card"),
+      line: document.getElementById("cust_monthly_usage_line"),
+      hint: document.getElementById("cust_monthly_usage_hint"),
+    };
+  }
+
+  if (scope === "stats") {
+    return {
+      card: document.getElementById("stats_monthly_usage_card"),
+      line: document.getElementById("stats_monthly_usage_line"),
+      hint: document.getElementById("stats_monthly_usage_hint"),
+    };
+  }
+
+  return { card: null, line: null, hint: null };
+}
+
 function renderStorageBox(scope, storage, tone = "info", message = "") {
   const ui = getStorageUi(scope);
   if (!ui.line || !ui.hint) return;
@@ -468,6 +490,57 @@ function renderStorageBox(scope, storage, tone = "info", message = "") {
   ui.hint.textContent = message || parts.join(" · ") || "Speicherstand geladen.";
 }
 
+function renderMonthlyUsageBox(scope, usage, tone = "info", message = "") {
+  const ui = getMonthlyUsageUi(scope);
+  if (!ui.line || !ui.hint) return;
+
+  const card = ui.card;
+  if (card) {
+    card.classList.remove("tone-info", "tone-success", "tone-error");
+    card.classList.add(`tone-${tone}`);
+  }
+
+  if (!usage || typeof usage !== "object") {
+    ui.line.textContent = "–";
+    ui.hint.textContent = message || "Noch nicht geladen.";
+    return;
+  }
+
+  const used = Number(usage.used ?? 0);
+  const limit = usage.limit;
+
+  ui.line.textContent =
+    limit == null
+      ? `${used} / ∞ Nachrichten`
+      : `${used} / ${limit} Nachrichten`;
+
+  const parts = [];
+  if (usage.plan) parts.push(`Plan: ${usage.plan}`);
+
+  if (limit == null) {
+    parts.push("Kein Monatslimit gesetzt");
+  } else {
+    parts.push(`Verbleibend: ${Math.max(0, Number(usage.remaining ?? (limit - used)))}`);
+  }
+
+  if (usage.month_start) {
+    try {
+      const d = new Date(usage.month_start);
+      if (!Number.isNaN(d.getTime())) {
+        parts.push(
+          `Monat ab ${d.toLocaleDateString("de-AT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}`
+        );
+      }
+    } catch {}
+  }
+
+  ui.hint.textContent = message || parts.join(" · ") || "Monatsnutzung geladen.";
+}
+
 async function fetchCustomerStorage(customerId) {
   if (!customerId) return { ok: false, error: "missing_customer_id" };
 
@@ -488,6 +561,26 @@ async function fetchCustomerStorage(customerId) {
   };
 }
 
+async function fetchCustomerMonthlyUsage(customerId) {
+  if (!customerId) return { ok: false, error: "missing_customer_id" };
+
+  const res = await getJSONWithAdmin(ADMIN_CUSTOMER_MONTHLY_USAGE_URL(customerId));
+  if (res._noFetch) return { ok: false, error: "Kein Admin-Token gesetzt." };
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: data?.error || `HTTP ${res.status}`,
+    };
+  }
+
+  return {
+    ok: true,
+    usage: data?.monthly_usage || data,
+  };
+}
+
 async function loadStorageIntoScope(scope, customerId) {
   if (!customerId) {
     renderStorageBox(scope, null, "info", "Kein Customer ausgewählt.");
@@ -505,6 +598,34 @@ async function loadStorageIntoScope(scope, customerId) {
   renderStorageBox(scope, r.storage, "success");
 }
 
+async function loadMonthlyUsageIntoScope(scope, customerId) {
+  if (!customerId) {
+    renderMonthlyUsageBox(scope, null, "info", "Kein Customer ausgewählt.");
+    return;
+  }
+
+  renderMonthlyUsageBox(scope, null, "info", "Lade Monatsnutzung …");
+
+  const r = await fetchCustomerMonthlyUsage(customerId);
+  if (!r.ok) {
+    renderMonthlyUsageBox(scope, null, "error", r.error || "Konnte Monatsnutzung nicht laden.");
+    return;
+  }
+
+  const usage = r.usage || {};
+  const used = Number(usage.used ?? 0);
+  const limit = usage.limit;
+
+  let tone = "success";
+  if (limit != null) {
+    const ratio = limit > 0 ? used / limit : 1;
+    if (ratio >= 1) tone = "error";
+    else if (ratio >= 0.8) tone = "info";
+  }
+
+  renderMonthlyUsageBox(scope, usage, tone);
+}
+
 async function syncStoragePanels(customerId) {
   if (!customerId) {
     renderStorageBox("customer", null, "info", "Kein Customer ausgewählt.");
@@ -515,6 +636,19 @@ async function syncStoragePanels(customerId) {
   await Promise.all([
     loadStorageIntoScope("customer", customerId),
     loadStorageIntoScope("upload", customerId),
+  ]);
+}
+
+async function syncMonthlyUsagePanels(customerId) {
+  if (!customerId) {
+    renderMonthlyUsageBox("customer", null, "info", "Kein Customer ausgewählt.");
+    renderMonthlyUsageBox("stats", null, "info", "Kein Customer ausgewählt.");
+    return;
+  }
+
+  await Promise.all([
+    loadMonthlyUsageIntoScope("customer", customerId),
+    loadMonthlyUsageIntoScope("stats", customerId),
   ]);
 }
 
@@ -1357,6 +1491,7 @@ function wireStatsPicker() {
       if (searchEl) searchEl.value = "";
       refreshStatsPicker({ keepSelection: true });
       selectEl.value = fromCustomers;
+      loadMonthlyUsageIntoScope("stats", fromCustomers);
     });
   }
 }
@@ -1662,10 +1797,13 @@ async function loadCustomersList({ keepSelection = true } = {}) {
   const full = await ensureSelectedCustomerFull();
   renderCustomerIntoEditor(full || {});
   await syncStoragePanels(selectEl.value);
+  await syncMonthlyUsagePanels(selectEl.value);
 } else {
   renderCustomerIntoEditor({});
   renderStorageBox("customer", null, "info", "Kein Customer ausgewählt.");
   renderStorageBox("upload", null, "info", "Kein Customer ausgewählt.");
+  renderMonthlyUsageBox("customer", null, "info", "Kein Customer ausgewählt.");
+  renderMonthlyUsageBox("stats", null, "info", "Kein Customer ausgewählt.");
   updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" });
 }
   } catch {
@@ -1714,6 +1852,7 @@ async function saveSelectedCustomer() {
 const full = await ensureSelectedCustomerFull();
 renderCustomerIntoEditor(full || updated || {});
 await syncStoragePanels(id);
+await syncMonthlyUsagePanels(id);
   } catch {
     setStatus(statusEl, "Keine Verbindung zum Backend oder Endpoint fehlt.", "error");
   }
@@ -1773,6 +1912,7 @@ refreshAnswersPicker({ keepSelection: true });
 refreshWidgetPicker({ keepSelection: true });
 
 await syncStoragePanels(created.id);
+await syncMonthlyUsagePanels(created.id);
   } catch {
     setStatus(statusEl, "Keine Verbindung zum Backend oder Endpoint fehlt.", "error");
   } finally {
@@ -2538,11 +2678,14 @@ if (custSelect) {
     if (!id) {
       renderCustomerIntoEditor({});
       renderStorageBox("customer", null, "info", "Kein Customer ausgewählt.");
+      renderMonthlyUsageBox("customer", null, "info", "Kein Customer ausgewählt.");
+      renderMonthlyUsageBox("stats", null, "info", "Kein Customer ausgewählt.");
       return;
     }
     const full = await ensureSelectedCustomerFull();
     renderCustomerIntoEditor(full || {});
     await syncStoragePanels(id);
+    await syncMonthlyUsagePanels(id);
   });
 }
 
@@ -2657,6 +2800,7 @@ if (custSelect) {
       }
 
       loadTotalsAndDaily({ customerIdOrNull: id, days });
+loadMonthlyUsageIntoScope("stats", id);
     });
   }
 
