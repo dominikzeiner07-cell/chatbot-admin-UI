@@ -386,36 +386,44 @@ sub.example.com"></textarea>
           <div class="section">
             <h3>Farben</h3>
 
-            <div class="grid-3" style="align-items:end;">
-              <div>
-                <label for="widget_header_color">Header-Farbe</label>
-                <div class="color-picker-row">
-                  <span id="widget_header_color_swatch" class="color-swatch" aria-hidden="true"></span>
-                  <input id="widget_header_color" type="color" value="#000000" />
-                  <input id="widget_header_color_hex" class="color-hex" type="text" value="#000000"
-                    readonly autocapitalize="off" spellcheck="false" />
-                </div>
-              </div>
+<div class="grid-4" style="align-items:end;">
+  <div>
+    <label for="widget_header_color">Header-Farbe</label>
+    <div class="color-picker-row">
+      <span id="widget_header_color_swatch" class="color-swatch" aria-hidden="true"></span>
+      <input id="widget_header_color" type="color" value="#000000" />
+      <input id="widget_header_color_hex" class="color-hex" type="text" value="#000000"
+        readonly autocapitalize="off" spellcheck="false" />
+    </div>
+  </div>
 
-              <div>
-                <label for="widget_accent_color">Accent (Send-Button / Icons)</label>
-                <div class="color-picker-row">
-                  <span id="widget_accent_color_swatch" class="color-swatch" aria-hidden="true"></span>
-                  <input id="widget_accent_color" type="color" value="#000000" />
-                  <input id="widget_accent_color_hex" class="color-hex" type="text" value="#000000"
-                    readonly autocapitalize="off" spellcheck="false" />
-                </div>
-              </div>
+  <div>
+    <label for="widget_accent_color">Accent (Send-Button / Icons)</label>
+    <div class="color-picker-row">
+      <span id="widget_accent_color_swatch" class="color-swatch" aria-hidden="true"></span>
+      <input id="widget_accent_color" type="color" value="#000000" />
+      <input id="widget_accent_color_hex" class="color-hex" type="text" value="#000000"
+        readonly autocapitalize="off" spellcheck="false" />
+    </div>
+  </div>
 
-              <div>
-                <label for="widget_text_color_mode">Text-Farbe (Auto)</label>
-                <select id="widget_text_color_mode">
-                  <option value="auto" selected>auto (empfohlen)</option>
-                  <option value="light">hell</option>
-                  <option value="dark">dunkel</option>
-                </select>
-              </div>
-            </div>
+  <div>
+    <label for="widget_text_color_mode">Text-Farbe (Auto)</label>
+    <select id="widget_text_color_mode">
+      <option value="auto" selected>auto (empfohlen)</option>
+      <option value="light">hell</option>
+      <option value="dark">dunkel</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="widget_theme_mode">Widget-Darstellung</label>
+    <select id="widget_theme_mode">
+      <option value="light" selected>Light Mode</option>
+      <option value="dark">Dark Mode</option>
+    </select>
+  </div>
+</div>
 
             <p class="sub" style="margin-top:8px;">
               Hinweis: „Auto“ bedeutet: wir setzen die Textfarbe später automatisch so, dass sie auf dem Header gut lesbar ist.

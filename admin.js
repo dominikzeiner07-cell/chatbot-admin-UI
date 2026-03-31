@@ -663,6 +663,7 @@ const DEFAULT_WIDGET_SETTINGS = {
   header_color: "#000000",
   accent_color: "#000000",
   text_color_mode: "auto",
+  theme_mode: "light",
   avatar_url: "",
 
   // NEW: Legal links
@@ -873,6 +874,9 @@ function readWidgetSettingsFromCustomer(cust) {
     const mode = String(pick(raw, ["text_color_mode", "textColorMode"]) ?? s.text_color_mode).toLowerCase();
     s.text_color_mode = (mode === "light" || mode === "dark" || mode === "auto") ? mode : "auto";
 
+    const themeMode = String(pick(raw, ["theme_mode", "themeMode"]) ?? s.theme_mode).toLowerCase();
+    s.theme_mode = themeMode === "dark" ? "dark" : "light";
+
     s.avatar_url = String(pick(raw, ["avatar_url", "botAvatarUrl", "bot_avatar_url", "botAvatarUrl"]) ?? "");
     // NEW: Legal links
 s.privacy_url = String(pick(raw, ["privacy_url", "privacyUrl", "privacy_policy_url", "privacyPolicyUrl", "datenschutz_url"]) ?? "");
@@ -893,6 +897,11 @@ s.terms_url = String(pick(raw, ["terms_url", "termsUrl", "agb_url", "conditions_
     if (cust?.text_color_mode) {
       const mode = String(cust.text_color_mode).toLowerCase();
       s.text_color_mode = (mode === "light" || mode === "dark" || mode === "auto") ? mode : "auto";
+    }
+
+    if (cust?.theme_mode) {
+    const themeMode = String(cust.theme_mode).toLowerCase();
+     s.theme_mode = themeMode === "dark" ? "dark" : "light";
     }
 
     if (cust?.bot_avatar_url) s.avatar_url = String(cust.bot_avatar_url);
@@ -917,6 +926,7 @@ s.bot_name = s.bot_name.trim() || DEFAULT_WIDGET_SETTINGS.bot_name;
 s.user_label = s.user_label.trim();
 s.greeting_text = s.greeting_text.trim() || DEFAULT_WIDGET_SETTINGS.greeting_text;
 s.first_message = s.first_message.trim() || DEFAULT_WIDGET_SETTINGS.first_message;
+s.theme_mode = String(s.theme_mode || "light").toLowerCase() === "dark" ? "dark" : "light";
 
 // NEW: Legal links trims
 s.privacy_url = String(s.privacy_url || "").trim();
@@ -936,8 +946,10 @@ function writeWidgetSettingsToForm(settings) {
   writeValueToAny(["widget_header_color", "widget_header_bg"], settings.header_color);
   writeValueToAny(["widget_accent_color", "widget_accent"], settings.accent_color);
 
-  writeValueToAny(["widget_text_color_mode"], settings.text_color_mode);
-  // NEW: Legal links
+writeValueToAny(["widget_text_color_mode"], settings.text_color_mode);
+writeValueToAny(["widget_theme_mode"], settings.theme_mode || "light");
+
+// NEW: Legal links
 writeValueToAny(["widget_privacy_url"], settings.privacy_url || "");
 
 
@@ -989,6 +1001,8 @@ function readWidgetSettingsFromForm() {
 
   const modeRaw = String(readValueFromAny(["widget_text_color_mode"]) || "auto").toLowerCase();
   const text_color_mode = (modeRaw === "light" || modeRaw === "dark" || modeRaw === "auto") ? modeRaw : "auto";
+  const themeModeRaw = String(readValueFromAny(["widget_theme_mode"]) || "light").toLowerCase();
+  const theme_mode = themeModeRaw === "dark" ? "dark" : "light";
 
   const img = document.getElementById("widget_avatar_preview");
   const avatar_url = String(img?.getAttribute("src") || "").trim();
@@ -1001,6 +1015,7 @@ function readWidgetSettingsFromForm() {
   header_color: header,
   accent_color: accent,
   text_color_mode,
+  theme_mode,
   avatar_url,
 
   // NEW: Legal links
@@ -1031,8 +1046,8 @@ return {
   header_color: String(s.header_color ?? "").trim(),
   accent_color: String(s.accent_color ?? "").trim(),
   text_color_mode: String(s.text_color_mode ?? "auto").trim().toLowerCase(),
+  theme_mode: String(s.theme_mode ?? "light").trim().toLowerCase() === "dark" ? "dark" : "light",
   avatar_url: String(s.avatar_url ?? "").trim() || null,
-
   // NEW: Legal links
   privacy_url: String(s.privacy_url ?? "").trim() || null,
   imprint_url: String(s.imprint_url ?? "").trim() || null,
@@ -2438,6 +2453,7 @@ function wireWidgetCustomizer() {
   "widget_accent_color",
   "widget_accent",
   "widget_text_color_mode",
+  "widget_theme_mode",
   "widget_privacy_url",
 
 ];
