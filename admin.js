@@ -1333,6 +1333,44 @@ const PLAN_DEFAULT_MODEL = {
   pro: "gpt-4o",
 };
 
+const PLAN_DEFAULT_STORAGE_LIMIT = {
+  standard: 1500,
+  pro: 5000,
+};
+
+function getPlanDefaultStorageLimit(plan) {
+  const p = String(plan || "").trim().toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(PLAN_DEFAULT_STORAGE_LIMIT, p)) {
+    return PLAN_DEFAULT_STORAGE_LIMIT[p];
+  }
+  return PLAN_DEFAULT_STORAGE_LIMIT.standard;
+}
+
+function updateStorageLimitHint({ planElId, storageElId, hintElId }) {
+  const planEl = document.getElementById(planElId);
+  const storageEl = document.getElementById(storageElId);
+  const hintEl = document.getElementById(hintElId);
+
+  if (!hintEl) return;
+
+  const plan = (planEl?.value || "").trim().toLowerCase();
+  const planDefault = getPlanDefaultStorageLimit(plan || "standard");
+  const overrideRaw = (storageEl?.value || "").trim();
+  const override = overrideRaw ? Number(overrideRaw) : null;
+  const effective = Number.isFinite(override) ? override : planDefault;
+
+  if (storageEl) {
+    storageEl.placeholder = `leer = Plan-Default (${planDefault} Chunks)`;
+  }
+
+  if (!plan) {
+    hintEl.textContent = "Plan auswählen, um das Default-Speicherlimit zu sehen.";
+    return;
+  }
+
+  hintEl.textContent = `Plan-Default: ${planDefault} Chunks · Effektiv verwendet: ${effective} Chunks`;
+}
+
 function getPlanDefaultModel(plan) {
   const p = String(plan || "").trim().toLowerCase();
   return PLAN_DEFAULT_MODEL[p] || "";
@@ -1679,6 +1717,7 @@ function renderCustomerIntoEditor(c) {
   set("cust_widget_key", c?.widget_key ?? "");
   set("cust_monthly_limit", c?.monthly_message_limit ?? "");
   set("cust_ask_rpm_limit", c?.ask_rpm_limit ?? "");
+  set("cust_storage_chunk_limit", c?.storage_chunk_limit ?? "");
 
   const allowed = Array.isArray(c?.allowed_domains) ? c.allowed_domains : [];
   set("cust_allowed_domains", allowed.join("\n"));
@@ -1708,6 +1747,12 @@ function renderCustomerIntoEditor(c) {
     planElId: "cust_plan",
     modelElId: "cust_model",
     hintElId: "cust_model_hint",
+  });
+
+    updateStorageLimitHint({
+    planElId: "cust_plan",
+    storageElId: "cust_storage_chunk_limit",
+    hintElId: "cust_storage_hint",
   });
 
   // Widget panel (falls vorhanden): syncen
@@ -1854,6 +1899,7 @@ async function saveSelectedCustomer() {
     system_prompt: (document.getElementById("cust_system_prompt")?.value ?? "").trim() || null,
     allowed_domains: parseAllowedDomainsTextarea(document.getElementById("cust_allowed_domains")?.value ?? ""),
     monthly_message_limit: safeNumberOrNull(document.getElementById("cust_monthly_limit")?.value),
+    storage_chunk_limit: safeNumberOrNull(document.getElementById("cust_storage_chunk_limit")?.value),
     ask_rpm_limit: safeNumberOrNull(document.getElementById("cust_ask_rpm_limit")?.value),
   };
 
@@ -1897,6 +1943,7 @@ async function createCustomer() {
     system_prompt: (document.getElementById("create_system_prompt")?.value ?? "").trim() || null,
     allowed_domains: parseAllowedDomainsTextarea(document.getElementById("create_allowed_domains")?.value ?? ""),
     monthly_message_limit: safeNumberOrNull(document.getElementById("create_monthly_limit")?.value),
+    storage_chunk_limit: safeNumberOrNull(document.getElementById("create_storage_chunk_limit")?.value),
     ask_rpm_limit: safeNumberOrNull(document.getElementById("create_ask_rpm")?.value),
   };
 
@@ -1954,17 +2001,30 @@ function clearCreateForm() {
     "create_model",
     "create_ask_rpm",
     "create_monthly_limit",
+    "create_storage_chunk_limit",
     "create_allowed_domains",
     "create_system_prompt",
   ];
+
   ids.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+
   const plan = document.getElementById("create_plan");
   if (plan) plan.value = "standard";
 
-  updateModelHint({ planElId: "create_plan", modelElId: "create_model", hintElId: "create_model_hint" });
+  updateModelHint({
+    planElId: "create_plan",
+    modelElId: "create_model",
+    hintElId: "create_model_hint",
+  });
+
+  updateStorageLimitHint({
+    planElId: "create_plan",
+    storageElId: "create_storage_chunk_limit",
+    hintElId: "create_storage_hint",
+  });
 }
 
 async function regenerateWidgetKey() {
@@ -2778,24 +2838,95 @@ if (custSelect) {
   // Model hints wiring (Create + Edit)
   const createPlanEl = document.getElementById("create_plan");
   const createModelEl = document.getElementById("create_model");
-  if (createPlanEl) createPlanEl.addEventListener("change", () =>
-    updateModelHint({ planElId: "create_plan", modelElId: "create_model", hintElId: "create_model_hint" })
-  );
+  const createStorageEl = document.getElementById("create_storage_chunk_limit");
+
+  if (createPlanEl) createPlanEl.addEventListener("change", () => {
+    updateModelHint({
+      planElId: "create_plan",
+      modelElId: "create_model",
+      hintElId: "create_model_hint",
+    });
+
+    updateStorageLimitHint({
+      planElId: "create_plan",
+      storageElId: "create_storage_chunk_limit",
+      hintElId: "create_storage_hint",
+    });
+  });
+
   if (createModelEl) createModelEl.addEventListener("input", () =>
-    updateModelHint({ planElId: "create_plan", modelElId: "create_model", hintElId: "create_model_hint" })
+    updateModelHint({
+      planElId: "create_plan",
+      modelElId: "create_model",
+      hintElId: "create_model_hint",
+    })
+  );
+
+  if (createStorageEl) createStorageEl.addEventListener("input", () =>
+    updateStorageLimitHint({
+      planElId: "create_plan",
+      storageElId: "create_storage_chunk_limit",
+      hintElId: "create_storage_hint",
+    })
   );
 
   const editPlanEl = document.getElementById("cust_plan");
   const editModelEl = document.getElementById("cust_model");
-  if (editPlanEl) editPlanEl.addEventListener("change", () =>
-    updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" })
-  );
+  const editStorageEl = document.getElementById("cust_storage_chunk_limit");
+
+  if (editPlanEl) editPlanEl.addEventListener("change", () => {
+    updateModelHint({
+      planElId: "cust_plan",
+      modelElId: "cust_model",
+      hintElId: "cust_model_hint",
+    });
+
+    updateStorageLimitHint({
+      planElId: "cust_plan",
+      storageElId: "cust_storage_chunk_limit",
+      hintElId: "cust_storage_hint",
+    });
+  });
+
   if (editModelEl) editModelEl.addEventListener("input", () =>
-    updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" })
+    updateModelHint({
+      planElId: "cust_plan",
+      modelElId: "cust_model",
+      hintElId: "cust_model_hint",
+    })
   );
 
-  updateModelHint({ planElId: "create_plan", modelElId: "create_model", hintElId: "create_model_hint" });
-  updateModelHint({ planElId: "cust_plan", modelElId: "cust_model", hintElId: "cust_model_hint" });
+  if (editStorageEl) editStorageEl.addEventListener("input", () =>
+    updateStorageLimitHint({
+      planElId: "cust_plan",
+      storageElId: "cust_storage_chunk_limit",
+      hintElId: "cust_storage_hint",
+    })
+  );
+
+  updateModelHint({
+    planElId: "create_plan",
+    modelElId: "create_model",
+    hintElId: "create_model_hint",
+  });
+
+  updateModelHint({
+    planElId: "cust_plan",
+    modelElId: "cust_model",
+    hintElId: "cust_model_hint",
+  });
+
+  updateStorageLimitHint({
+    planElId: "create_plan",
+    storageElId: "create_storage_chunk_limit",
+    hintElId: "create_storage_hint",
+  });
+
+  updateStorageLimitHint({
+    planElId: "cust_plan",
+    storageElId: "cust_storage_chunk_limit",
+    hintElId: "cust_storage_hint",
+  });
 
   // Auto-load customers once
   loadCustomersList({ keepSelection: true });
