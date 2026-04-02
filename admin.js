@@ -595,7 +595,20 @@ async function loadStorageIntoScope(scope, customerId) {
     return;
   }
 
-  renderStorageBox(scope, r.storage, "success");
+  const storage = r.storage || {};
+  const current = Number(storage.current ?? 0);
+  const limit = storage.limit;
+
+  let tone = "success";
+
+  if (limit != null) {
+    const ratio = limit > 0 ? current / limit : 1;
+
+    if (ratio >= 1) tone = "error";
+    else if (ratio >= 0.8) tone = "info";
+  }
+
+  renderStorageBox(scope, storage, tone);
 }
 
 async function loadMonthlyUsageIntoScope(scope, customerId) {
