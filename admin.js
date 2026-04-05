@@ -418,7 +418,7 @@ function getStorageUi(scope) {
     return {
       card: document.getElementById("cust_storage_card"),
       line: document.getElementById("cust_storage_line"),
-      hint: document.getElementById("cust_storage_limit_hint"),
+      hint: document.getElementById("cust_storage_hint"),
     };
   }
 
