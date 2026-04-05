@@ -418,7 +418,7 @@ function getStorageUi(scope) {
     return {
       card: document.getElementById("cust_storage_card"),
       line: document.getElementById("cust_storage_line"),
-      hint: document.getElementById("cust_storage_hint"),
+      hint: document.getElementById("cust_storage_limit_hint"),
     };
   }
 
@@ -1338,6 +1338,44 @@ const PLAN_DEFAULT_STORAGE_LIMIT = {
   pro: 5000,
 };
 
+const PLAN_DEFAULT_MONTHLY_LIMIT = {
+  standard: 1500,
+  pro: 1500,
+};
+
+function getPlanDefaultMonthlyLimit(plan) {
+  const p = String(plan || "").trim().toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(PLAN_DEFAULT_MONTHLY_LIMIT, p)) {
+    return PLAN_DEFAULT_MONTHLY_LIMIT[p];
+  }
+  return PLAN_DEFAULT_MONTHLY_LIMIT.standard;
+}
+
+function updateMonthlyLimitHint({ planElId, monthlyElId, hintElId }) {
+  const planEl = document.getElementById(planElId);
+  const monthlyEl = document.getElementById(monthlyElId);
+  const hintEl = document.getElementById(hintElId);
+
+  if (!hintEl) return;
+
+  const plan = (planEl?.value || "").trim().toLowerCase();
+  const planDefault = getPlanDefaultMonthlyLimit(plan || "standard");
+  const overrideRaw = (monthlyEl?.value || "").trim();
+  const override = overrideRaw ? Number(overrideRaw) : null;
+  const effective = Number.isFinite(override) ? override : planDefault;
+
+  if (monthlyEl) {
+    monthlyEl.placeholder = `leer = Plan-Default (${planDefault} Nachrichten)`;
+  }
+
+  if (!plan) {
+    hintEl.textContent = "Plan auswählen, um das Default-Monatslimit zu sehen.";
+    return;
+  }
+
+  hintEl.textContent = `Plan-Default: ${planDefault} Nachrichten · Effektiv verwendet: ${effective} Nachrichten`;
+}
+
 function getPlanDefaultStorageLimit(plan) {
   const p = String(plan || "").trim().toLowerCase();
   if (Object.prototype.hasOwnProperty.call(PLAN_DEFAULT_STORAGE_LIMIT, p)) {
@@ -1743,16 +1781,28 @@ function renderCustomerIntoEditor(c) {
     prev.textContent = wk ? buildWidgetSnippet({ widgetKey: wk }) : "";
   }
 
-  updateModelHint({
-    planElId: "cust_plan",
-    modelElId: "cust_model",
-    hintElId: "cust_model_hint",
-  });
+updateModelHint({
+  planElId: "cust_plan",
+  modelElId: "cust_model",
+  hintElId: "cust_model_hint",
+});
 
-    updateStorageLimitHint({
+updateStorageLimitHint({
+  planElId: "cust_plan",
+  storageElId: "cust_storage_chunk_limit",
+  hintElId: "cust_storage_limit_hint",
+});
+
+updateMonthlyLimitHint({
+  planElId: "cust_plan",
+  monthlyElId: "cust_monthly_limit",
+  hintElId: "cust_monthly_limit_hint",
+});
+
+    updateMonthlyLimitHint({
     planElId: "cust_plan",
-    storageElId: "cust_storage_chunk_limit",
-    hintElId: "cust_storage_hint",
+    monthlyElId: "cust_monthly_limit",
+    hintElId: "cust_monthly_limit_hint",
   });
 
   // Widget panel (falls vorhanden): syncen
@@ -2023,7 +2073,13 @@ function clearCreateForm() {
   updateStorageLimitHint({
     planElId: "create_plan",
     storageElId: "create_storage_chunk_limit",
-    hintElId: "create_storage_hint",
+    hintElId: "create_storage_limit_hint",
+  });
+
+    updateMonthlyLimitHint({
+    planElId: "create_plan",
+    monthlyElId: "create_monthly_limit",
+    hintElId: "create_monthly_limit_hint",
   });
 }
 
@@ -2839,6 +2895,7 @@ if (custSelect) {
   const createPlanEl = document.getElementById("create_plan");
   const createModelEl = document.getElementById("create_model");
   const createStorageEl = document.getElementById("create_storage_chunk_limit");
+  const createMonthlyEl = document.getElementById("create_monthly_limit");
 
   if (createPlanEl) createPlanEl.addEventListener("change", () => {
     updateModelHint({
@@ -2850,8 +2907,14 @@ if (custSelect) {
     updateStorageLimitHint({
       planElId: "create_plan",
       storageElId: "create_storage_chunk_limit",
-      hintElId: "create_storage_hint",
+      hintElId: "create_storage_limit_hint",
     });
+
+   updateMonthlyLimitHint({
+      planElId: "create_plan",
+      monthlyElId: "create_monthly_limit",
+     hintElId: "create_monthly_limit_hint",
+     });
   });
 
   if (createModelEl) createModelEl.addEventListener("input", () =>
@@ -2866,27 +2929,42 @@ if (custSelect) {
     updateStorageLimitHint({
       planElId: "create_plan",
       storageElId: "create_storage_chunk_limit",
-      hintElId: "create_storage_hint",
+      hintElId: "create_storage_limit_hint",
     })
   );
+
+  if (createMonthlyEl) createMonthlyEl.addEventListener("input", () =>
+    updateMonthlyLimitHint({
+      planElId: "create_plan",
+      monthlyElId: "create_monthly_limit",
+      hintElId: "create_monthly_limit_hint",
+  })
+);
 
   const editPlanEl = document.getElementById("cust_plan");
   const editModelEl = document.getElementById("cust_model");
   const editStorageEl = document.getElementById("cust_storage_chunk_limit");
+  const editMonthlyEl = document.getElementById("cust_monthly_limit");
 
-  if (editPlanEl) editPlanEl.addEventListener("change", () => {
-    updateModelHint({
-      planElId: "cust_plan",
-      modelElId: "cust_model",
-      hintElId: "cust_model_hint",
-    });
-
-    updateStorageLimitHint({
-      planElId: "cust_plan",
-      storageElId: "cust_storage_chunk_limit",
-      hintElId: "cust_storage_hint",
-    });
+ if (editPlanEl) editPlanEl.addEventListener("change", () => {
+  updateModelHint({
+    planElId: "cust_plan",
+    modelElId: "cust_model",
+    hintElId: "cust_model_hint",
   });
+
+  updateStorageLimitHint({
+    planElId: "cust_plan",
+    storageElId: "cust_storage_chunk_limit",
+    hintElId: "cust_storage_limit_hint",
+  });
+
+  updateMonthlyLimitHint({
+    planElId: "cust_plan",
+    monthlyElId: "cust_monthly_limit",
+    hintElId: "cust_monthly_limit_hint",
+  });
+});
 
   if (editModelEl) editModelEl.addEventListener("input", () =>
     updateModelHint({
@@ -2900,9 +2978,17 @@ if (custSelect) {
     updateStorageLimitHint({
       planElId: "cust_plan",
       storageElId: "cust_storage_chunk_limit",
-      hintElId: "cust_storage_hint",
+      hintElId: "cust_storage_limit_hint",
     })
   );
+
+  if (editMonthlyEl) editMonthlyEl.addEventListener("input", () =>
+  updateMonthlyLimitHint({
+    planElId: "cust_plan",
+    monthlyElId: "cust_monthly_limit",
+    hintElId: "cust_monthly_limit_hint",
+  })
+);
 
   updateModelHint({
     planElId: "create_plan",
@@ -2919,17 +3005,30 @@ if (custSelect) {
   updateStorageLimitHint({
     planElId: "create_plan",
     storageElId: "create_storage_chunk_limit",
-    hintElId: "create_storage_hint",
+    hintElId: "create_storage_limit_hint",
   });
 
   updateStorageLimitHint({
     planElId: "cust_plan",
     storageElId: "cust_storage_chunk_limit",
-    hintElId: "cust_storage_hint",
+    hintElId: "cust_storage_limit_hint",
+  });
+
+  updateMonthlyLimitHint({
+    planElId: "create_plan",
+    monthlyElId: "create_monthly_limit",
+    hintElId: "create_monthly_limit_hint",
+  });
+
+  updateMonthlyLimitHint({
+    planElId: "cust_plan",
+    monthlyElId: "cust_monthly_limit",
+    hintElId: "cust_monthly_limit_hint",
   });
 
   // Auto-load customers once
   loadCustomersList({ keepSelection: true });
+
 
   /* -------------------------
      Stats wiring
