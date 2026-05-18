@@ -693,7 +693,7 @@ sub.example.com"></textarea>
 
           <form id="upload-form" autocomplete="off" novalidate>
             <label for="customer_id">customer_id</label>
-            <input id="customer_id" name="customer_id" type="text" value="demo-1" required autocapitalize="off" spellcheck="false" />
+            <input id="customer_id" name="customer_id" type="text" value="" required autocapitalize="off" spellcheck="false" />
             <div class="storage-card" id="upload_storage_card">
   <div class="storage-label">Speicher dieses Customers</div>
   <div class="storage-main" id="upload_storage_line">–</div>
@@ -738,7 +738,7 @@ sub.example.com"></textarea>
 
           <form id="crawl-form" autocomplete="off" novalidate>
             <label for="crawl_customer_id">customer_id</label>
-            <input id="crawl_customer_id" type="text" value="demo-1" required autocapitalize="off" spellcheck="false" />
+            <input id="crawl_customer_id" type="text" value="" required autocapitalize="off" spellcheck="false" />
 
             <label for="crawl_url">URL</label>
             <input id="crawl_url" type="url" placeholder="https://www.dein-kunde.at/leistungen" required autocapitalize="off" spellcheck="false" />
@@ -776,7 +776,7 @@ sub.example.com"></textarea>
 
           <form id="domain-form" autocomplete="off" novalidate>
             <label for="dom_customer_id">customer_id</label>
-            <input id="dom_customer_id" type="text" value="demo-1" required autocapitalize="off" spellcheck="false" />
+            <input id="dom_customer_id" type="text" value="" required autocapitalize="off" spellcheck="false" />
 
             <label for="dom_start_url">Start-URL (Domain-Einstieg)</label>
             <input id="dom_start_url" type="url" placeholder="https://www.dein-kunde.at/" required autocapitalize="off" spellcheck="false" />
@@ -838,7 +838,7 @@ sub.example.com"></textarea>
             <h3>Purge: Wissens-Index (documents) löschen</h3>
 
             <label for="purge_customer_id">customer_id</label>
-            <input id="purge_customer_id" type="text" value="demo-3" required autocapitalize="off" spellcheck="false" />
+            <input id="purge_customer_id" type="text" value="" required autocapitalize="off" spellcheck="false" />
 
             <label for="purge_prefix">Source-Prefix (optional)</label>
             <input id="purge_prefix" type="url" placeholder="z. B. https://domain.tld/faq/" autocapitalize="off" spellcheck="false" />
@@ -867,6 +867,12 @@ sub.example.com"></textarea>
               Löscht den Customer und optional dessen <code>documents</code> und <code>interactions</code>.
               Empfehlung: erst Dry-Run.
             </p>
+
+            <div>
+              <label for="custdel_customer_id">customer_id (Ziel dieser Aktion)</label>
+              <input id="custdel_customer_id" type="text" readonly
+                     placeholder="(Customer oben im Purge-Picker auswählen)" />
+            </div>
 
             <div class="checkboxes" style="margin-top:4px;">
               <label class="checkbox" style="display:block;margin-bottom:6px;">

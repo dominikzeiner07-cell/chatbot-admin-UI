@@ -82,26 +82,11 @@ function initThemeToggle() {
 }
 
 const BACKEND_BASE = (() => {
-  // 1) URL param wins
-  try {
-    const u = new URL(location.href);
-    const qp =
-      u.searchParams.get("backend_base") ||
-      u.searchParams.get("api_base") ||
-      u.searchParams.get("backend") ||
-      "";
-    const cand = normalizeBaseUrl(qp);
-    if (cand && isHttpUrlStr(cand)) {
-      setStoredBackendBase(cand);
-      return cand;
-    }
-  } catch {}
-
-  // 2) localStorage next
+  // 1) localStorage override (dev use)
   const stored = normalizeBaseUrl(getStoredBackendBase());
   if (stored && isHttpUrlStr(stored)) return stored;
 
-  // 3) fallback
+  // 2) fallback
   return normalizeBaseUrl(DEFAULT_BACKEND_BASE);
 })();
 
@@ -357,6 +342,7 @@ function fillAllCustomerIdInputs(customerId) {
     "crawl_customer_id",
     "dom_customer_id",
     "purge_customer_id",
+    "custdel_customer_id",
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -393,11 +379,21 @@ async function copyToClipboard(text) {
   }
 }
 
+function jsStringLiteral(value) {
+  return JSON.stringify(String(value || ""))
+    .replace(/</g, "\\u003C")
+    .replace(/>/g, "\\u003E")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
 function buildWidgetSnippet({ widgetKey }) {
+  // WIDGET_SCRIPT_URL is a hardcoded constant — not user input, not from localStorage or URL params.
   return `<!-- Chatbot Widget -->
 <script>
-  window.CHATBOT_WIDGET_KEY = "${widgetKey}";
-  window.CHATBOT_API_BASE = "${BACKEND_BASE}";
+  window.CHATBOT_WIDGET_KEY = ${jsStringLiteral(widgetKey)};
+  window.CHATBOT_API_BASE = ${jsStringLiteral(BACKEND_BASE)};
 </script>
 <script src="${WIDGET_SCRIPT_URL}" defer></script>`;
 }
@@ -1532,7 +1528,10 @@ function wireExtraPickers() {
 
     selectEl.addEventListener("change", () => {
       const id = (selectEl.value || "").trim();
-      if (targetInputEl) targetInputEl.value = id;
+      if (targetInputEl) {
+        targetInputEl.value = id;
+        targetInputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      }
 
       if (searchEl && searchEl.value) {
         searchEl.value = "";
@@ -2283,12 +2282,27 @@ function renderDailyTable(daysArr) {
     const blocked = Number(r?.blocked ?? 0);
 
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${String(date)}</td>
-      <td style="text-align:right;">${String(total)}</td>
-      <td style="text-align:right;">${String(allowed)}</td>
-      <td style="text-align:right;">${String(blocked)}</td>
-    `;
+
+    const tdDate = document.createElement("td");
+    tdDate.textContent = String(date);
+
+    const tdTotal = document.createElement("td");
+    tdTotal.textContent = String(total);
+    tdTotal.style.textAlign = "right";
+
+    const tdAllowed = document.createElement("td");
+    tdAllowed.textContent = String(allowed);
+    tdAllowed.style.textAlign = "right";
+
+    const tdBlocked = document.createElement("td");
+    tdBlocked.textContent = String(blocked);
+    tdBlocked.style.textAlign = "right";
+
+    tr.appendChild(tdDate);
+    tr.appendChild(tdTotal);
+    tr.appendChild(tdAllowed);
+    tr.appendChild(tdBlocked);
+
     body.appendChild(tr);
   }
 }
@@ -2699,28 +2713,13 @@ function wireWidgetCustomizer() {
 document.addEventListener("DOMContentLoaded", () => {
   initThemeToggle();
 
-  // Admin-Token via URL setzen (?admin_token=...)
+  // Clean up legacy URL params that are no longer read or stored
   try {
-    const sp = new URLSearchParams(location.search);
-    const urlToken = sp.get("admin_token");
-    if (urlToken && urlToken.trim()) {
-      setStoredToken(urlToken.trim());
-      const u = new URL(location.href);
-      u.searchParams.delete("admin_token");
-      // also clean backend_base-ish params (we already consumed them at top-level)
-      u.searchParams.delete("backend_base");
-      u.searchParams.delete("api_base");
-      u.searchParams.delete("backend");
+    const u = new URL(location.href);
+    const stale = ["admin_token", "backend_base", "api_base", "backend"];
+    if (stale.some(p => u.searchParams.has(p))) {
+      stale.forEach(p => u.searchParams.delete(p));
       window.history.replaceState({}, "", u.toString());
-    } else {
-      // still clean backend params if present
-      const u = new URL(location.href);
-      if (u.searchParams.has("backend_base") || u.searchParams.has("api_base") || u.searchParams.has("backend")) {
-        u.searchParams.delete("backend_base");
-        u.searchParams.delete("api_base");
-        u.searchParams.delete("backend");
-        window.history.replaceState({}, "", u.toString());
-      }
     }
   } catch {}
 
@@ -3360,6 +3359,16 @@ setStatus(statusEl, data?.message || "Gespeichert.", "success");
         ...(noPrefix && !dryRun ? { confirm_all_sources: true } : {})
       };
 
+      if (!dryRun) {
+        const label = prefix
+          ? `Prefix: ${prefix}`
+          : "ALLE Dokumente für diesen Customer (kein Prefix gesetzt)";
+        const confirmed = window.confirm(
+          `Wirklich löschen?\n\nCustomer: ${customerId}\n${label}\n\nDieser Vorgang kann nicht rückgängig gemacht werden.`
+        );
+        if (!confirmed) return;
+      }
+
       setStatus(purgeStatusEl, dryRun ? "Prüfe (Dry-Run) …" : "Lösche …", "info");
       disableForm(purgeForm, true);
 
@@ -3401,7 +3410,7 @@ setStatus(statusEl, data?.message || "Gespeichert.", "success");
     const btnGo  = document.getElementById("custdel_btn_go");
 
     const runCustomerDelete = async ({ dryRun }) => {
-      const customerId = (document.getElementById("purge_customer_id")?.value || "").trim();
+      const customerId = (document.getElementById("custdel_customer_id")?.value || "").trim();
       const delDocs = Boolean(document.getElementById("custdel_docs")?.checked);
       const delInts = Boolean(document.getElementById("custdel_interactions")?.checked);
       const confirmed = Boolean(document.getElementById("custdel_confirm")?.checked);
@@ -3485,6 +3494,16 @@ setStatus(statusEl, data?.message || "Gespeichert.", "success");
 
     if (btnDry) btnDry.addEventListener("click", () => runCustomerDelete({ dryRun: true }));
     if (btnGo)  btnGo .addEventListener("click", () => runCustomerDelete({ dryRun: false }));
+  }
+
+  // M3: keep custdel_customer_id in sync with purge_customer_id so the delete target is always visible
+  const purgeIdEl = document.getElementById("purge_customer_id");
+  const custDelIdEl = document.getElementById("custdel_customer_id");
+  if (purgeIdEl && custDelIdEl) {
+    const syncCustDelId = () => { custDelIdEl.value = purgeIdEl.value; };
+    purgeIdEl.addEventListener("input", syncCustDelId);
+    purgeIdEl.addEventListener("change", syncCustDelId);
+    syncCustDelId();
   }
 
   // Widget panel wiring
