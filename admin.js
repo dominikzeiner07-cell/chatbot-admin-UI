@@ -1761,6 +1761,11 @@ function renderCustomerIntoEditor(c) {
 
   set("cust_system_prompt", c?.system_prompt ?? "");
 
+  // Support-Fallback-Kontaktdaten
+  set("cust_support_email", c?.support_email ?? "");
+  set("cust_support_phone", c?.support_phone ?? "");
+  set("cust_support_notes", c?.support_notes ?? "");
+
   // NEU: Subscription-Felder aus Supabase/Backend anzeigen
   const subStatus = c?.subscription_status ?? "";
   // je nach Backend-Property-Namen, wir sind tolerant:
@@ -1950,6 +1955,9 @@ async function saveSelectedCustomer() {
     monthly_message_limit: safeNumberOrNull(document.getElementById("cust_monthly_limit")?.value),
     storage_chunk_limit: safeNumberOrNull(document.getElementById("cust_storage_chunk_limit")?.value),
     ask_rpm_limit: safeNumberOrNull(document.getElementById("cust_ask_rpm_limit")?.value),
+    support_email: (document.getElementById("cust_support_email")?.value ?? "").trim() || null,
+    support_phone: (document.getElementById("cust_support_phone")?.value ?? "").trim() || null,
+    support_notes: (document.getElementById("cust_support_notes")?.value ?? "").trim() || null,
   };
 
   setStatus(statusEl, "Speichere …", "info");
@@ -1994,6 +2002,9 @@ async function createCustomer() {
     monthly_message_limit: safeNumberOrNull(document.getElementById("create_monthly_limit")?.value),
     storage_chunk_limit: safeNumberOrNull(document.getElementById("create_storage_chunk_limit")?.value),
     ask_rpm_limit: safeNumberOrNull(document.getElementById("create_ask_rpm")?.value),
+    support_email: (document.getElementById("create_support_email")?.value ?? "").trim() || null,
+    support_phone: (document.getElementById("create_support_phone")?.value ?? "").trim() || null,
+    support_notes: (document.getElementById("create_support_notes")?.value ?? "").trim() || null,
   };
 
   setStatus(statusEl, "Erstelle Customer …", "info");
@@ -2053,6 +2064,9 @@ function clearCreateForm() {
     "create_storage_chunk_limit",
     "create_allowed_domains",
     "create_system_prompt",
+    "create_support_email",
+    "create_support_phone",
+    "create_support_notes",
   ];
 
   ids.forEach((id) => {
@@ -2228,6 +2242,7 @@ async function loadStats({ customerIdOrNull, days }) {
   const totalEl = document.getElementById("stat_total");
   const allowedEl = document.getElementById("stat_allowed");
   const blockedEl = document.getElementById("stat_blocked");
+  const fallbacksEl = document.getElementById("stat_fallbacks");
 
   setStatus(statusEl, "Lade Totals …", "info");
   if (rawEl) rawEl.textContent = "";
@@ -2252,6 +2267,7 @@ async function loadStats({ customerIdOrNull, days }) {
       if (totalEl) totalEl.textContent = String(totals.total ?? "–");
       if (allowedEl) allowedEl.textContent = String(totals.allowed ?? "–");
       if (blockedEl) blockedEl.textContent = String(totals.blocked ?? "–");
+      if (fallbacksEl) fallbacksEl.textContent = String(totals.fallbacks ?? "–");
       if (rawEl) rawEl.textContent = JSON.stringify(data, null, 2);
 
       setStatus(statusEl, `OK (via ${base})`, "success");
@@ -2270,7 +2286,7 @@ function renderDailyTable(daysArr) {
   const rows = Array.isArray(daysArr) ? daysArr : [];
 
   if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="4" style="color:#6b7280;">Keine Daten.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="5" style="color:#6b7280;">Keine Daten.</td></tr>`;
     return;
   }
 
@@ -2280,6 +2296,7 @@ function renderDailyTable(daysArr) {
     const total = Number(r?.total ?? 0);
     const allowed = Number(r?.allowed ?? 0);
     const blocked = Number(r?.blocked ?? 0);
+    const fallbacks = Number(r?.fallbacks ?? 0);
 
     const tr = document.createElement("tr");
 
@@ -2298,10 +2315,15 @@ function renderDailyTable(daysArr) {
     tdBlocked.textContent = String(blocked);
     tdBlocked.style.textAlign = "right";
 
+    const tdFallbacks = document.createElement("td");
+    tdFallbacks.textContent = String(fallbacks);
+    tdFallbacks.style.textAlign = "right";
+
     tr.appendChild(tdDate);
     tr.appendChild(tdTotal);
     tr.appendChild(tdAllowed);
     tr.appendChild(tdBlocked);
+    tr.appendChild(tdFallbacks);
 
     body.appendChild(tr);
   }
@@ -2375,12 +2397,20 @@ function renderAnswersTable(items) {
     let status = r?.status ?? "";
     const allowedFlag = (typeof r?.allowed === "boolean") ? r.allowed : null;
     const blockedFlag = (typeof r?.blocked === "boolean") ? r.blocked : null;
+    const fallbackReason = r?.fallback_reason ? String(r.fallback_reason) : null;
 
     if (!status) {
       if (blockedFlag === true) status = "blocked";
       else if (allowedFlag === true) status = "allowed";
       else if (allowedFlag === false) status = "blocked";
       else status = "—";
+    }
+
+    // Support-Fallback sichtbar machen (z.B. "fallback: low_similarity")
+    if (fallbackReason) {
+      status = status === "blocked"
+        ? `blocked (${fallbackReason})`
+        : `fallback: ${fallbackReason}`;
     }
 
     const tr = document.createElement("tr");

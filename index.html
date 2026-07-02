@@ -125,6 +125,23 @@ sub.example.com"></textarea>
               <label for="create_system_prompt">system_prompt (optional)</label>
               <textarea id="create_system_prompt" rows="4" placeholder="Optionaler System-Prompt..."></textarea>
 
+<div class="grid-3">
+  <div>
+    <label for="create_support_email">support_email (optional)</label>
+    <input id="create_support_email" type="email" placeholder="support@kunde.at" autocapitalize="off" spellcheck="false" />
+  </div>
+
+  <div>
+    <label for="create_support_phone">support_phone (optional)</label>
+    <input id="create_support_phone" type="tel" placeholder="+43 1 234 56 78" />
+  </div>
+
+  <div>
+    <label for="create_support_notes">support_notes (optional)</label>
+    <textarea id="create_support_notes" rows="2" placeholder="z.B. Erreichbar Mo–Fr 9–17 Uhr"></textarea>
+  </div>
+</div>
+
               <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
                 <button class="btn" id="cust_create_btn" type="button">Customer erstellen</button>
                 <button class="btn btn-ghost" id="cust_create_clear" type="button">Felder leeren</button>
@@ -265,6 +282,27 @@ sub.example.com"></textarea>
 
               <label for="cust_system_prompt">system_prompt</label>
               <textarea id="cust_system_prompt" rows="6" placeholder="Optionaler System-Prompt..."></textarea>
+
+<div class="grid-3">
+  <div>
+    <label for="cust_support_email">support_email</label>
+    <input id="cust_support_email" type="email" placeholder="support@kunde.at" autocapitalize="off" spellcheck="false" />
+  </div>
+
+  <div>
+    <label for="cust_support_phone">support_phone</label>
+    <input id="cust_support_phone" type="tel" placeholder="+43 1 234 56 78" />
+  </div>
+
+  <div>
+    <label for="cust_support_notes">support_notes</label>
+    <textarea id="cust_support_notes" rows="2" placeholder="z.B. Erreichbar Mo–Fr 9–17 Uhr"></textarea>
+  </div>
+</div>
+<div class="sub" style="margin-top:-4px; margin-bottom:8px;">
+  Support-Fallback: Auf diese Kontaktdaten verweist der Bot, wenn er eine Frage nicht
+  zuverlässig beantworten kann. Leer = generischer Support-Hinweis ohne Kontaktdaten.
+</div>
 
              <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
   <button class="btn" id="cust_save" type="button">Änderungen speichern</button>
@@ -539,6 +577,10 @@ sub.example.com"></textarea>
                 <div class="stat-label">Blocked</div>
                 <div class="stat-value" id="stat_blocked">–</div>
               </div>
+              <div class="stat-card">
+                <div class="stat-label">Fallbacks</div>
+                <div class="stat-value" id="stat_fallbacks">–</div>
+              </div>
             </div>
 
             <div class="storage-card" id="stats_monthly_usage_card" style="margin-top:14px;">
@@ -560,7 +602,7 @@ sub.example.com"></textarea>
           <div class="section">
             <h3>Daily Stats</h3>
             <p class="sub" style="margin-top:-6px;">
-              Pro Tag: total / allowed / blocked.
+              Pro Tag: total / allowed / blocked / fallbacks.
             </p>
 
             <div class="table-wrap">
@@ -571,10 +613,11 @@ sub.example.com"></textarea>
                     <th style="text-align:right;">Total</th>
                     <th style="text-align:right;">Allowed</th>
                     <th style="text-align:right;">Blocked</th>
+                    <th style="text-align:right;">Fallbacks</th>
                   </tr>
                 </thead>
                 <tbody id="daily_body">
-                  <tr><td colspan="4" style="color:#6b7280;">–</td></tr>
+                  <tr><td colspan="5" style="color:#6b7280;">–</td></tr>
                 </tbody>
               </table>
             </div>
