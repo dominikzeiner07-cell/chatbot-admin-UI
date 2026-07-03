@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chatbot Admin – Wissen hochladen</title>
+  <title>Zeiner Systems – Admin Konsole</title>
   <link rel="stylesheet" href="admin.css" />
   <script>
     window.ADMIN_UI_BACKEND_BASE = "https://chatbot-backend-iqma.onrender.com";
@@ -31,15 +31,30 @@
       </header>
 
       <nav class="tabs">
-        <button class="tab-btn active" data-panel="panel-token">Admin-Token</button>
-        <button class="tab-btn" data-panel="panel-customers">Customers</button>
-        <button class="tab-btn" data-panel="panel-widget">Widget</button>
-        <button class="tab-btn" data-panel="panel-stats">Stats</button>
-        <button class="tab-btn" data-panel="panel-answers">Antworten</button>
-        <button class="tab-btn" data-panel="panel-upload">Dokument hochladen</button>
-        <button class="tab-btn" data-panel="panel-crawl">Website crawlen</button>
-        <button class="tab-btn" data-panel="panel-domain">Domain crawlen</button>
-        <button class="tab-btn" data-panel="panel-purge">Purge / Löschen</button>
+        <div class="tab-group">
+          <span class="tab-group-label">Verwaltung</span>
+          <button class="tab-btn" data-panel="panel-customers">Customers</button>
+          <button class="tab-btn" data-panel="panel-widget">Widget</button>
+        </div>
+
+        <div class="tab-group">
+          <span class="tab-group-label">Auswertung</span>
+          <button class="tab-btn" data-panel="panel-stats">Stats</button>
+          <button class="tab-btn" data-panel="panel-answers">Antworten</button>
+        </div>
+
+        <div class="tab-group">
+          <span class="tab-group-label">Wissen</span>
+          <button class="tab-btn" data-panel="panel-upload">Upload</button>
+          <button class="tab-btn" data-panel="panel-crawl">Crawl: Seite</button>
+          <button class="tab-btn" data-panel="panel-domain">Crawl: Domain</button>
+        </div>
+
+        <div class="tab-group">
+          <span class="tab-group-label">System</span>
+          <button class="tab-btn tab-btn-danger" data-panel="panel-purge">Purge / Löschen</button>
+          <button class="tab-btn active" data-panel="panel-token">Admin-Token</button>
+        </div>
       </nav>
 
       <section class="panels">
@@ -70,89 +85,6 @@
             Kunden verwalten (Plan/Model/Prompt/Domains/Limits).
           </p>
 
-          <!-- NEW: Create Customer -->
-          <div class="section">
-            <h3>Neuen Customer erstellen</h3>
-
-            <form id="cust_create_form" autocomplete="off" novalidate>
-              <div class="grid-2">
-                <div>
-                  <label for="create_name">Name</label>
-                  <input id="create_name" type="text" placeholder="z.B. Musterbetrieb GmbH" />
-                </div>
-                <div>
-                  <label for="create_plan">Plan</label>
-                  <select id="create_plan">
-                    <option value="standard">standard</option>
-                    <option value="pro">pro</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="grid-2">
-                <div>
-                  <label for="create_model">Model (Override, optional)</label>
-                  <input id="create_model" type="text" placeholder="Optionaler Override (Default hängt vom Plan ab)" />
-                  <div class="sub" id="create_model_hint" style="margin-top:6px;"></div>
-                </div>
-                <div>
-                  <label for="create_ask_rpm">ask_rpm_limit (RPM, optional)</label>
-                  <input id="create_ask_rpm" type="number" min="0" placeholder="leer = default" />
-                </div>
-              </div>
-
-<div class="grid-3">
-  <div>
-    <label for="create_monthly_limit">monthly_message_limit (optional)</label>
-    <input id="create_monthly_limit" type="number" min="0" placeholder="leer = Plan-Default" />
-    <div class="sub" id="create_monthly_limit_hint" style="margin-top:6px;"></div>
-  </div>
-
-  <div>
-    <label for="create_storage_chunk_limit">storage_chunk_limit (optional)</label>
-    <input id="create_storage_chunk_limit" type="number" min="0" placeholder="leer = Plan-Default" />
-    <div class="sub" id="create_storage_limit_hint" style="margin-top:6px;"></div>
-  </div>
-
-  <div>
-    <label for="create_allowed_domains">allowed_domains (optional)</label>
-    <textarea id="create_allowed_domains" rows="3" placeholder="Eine Domain pro Zeile, z.B.
-example.com
-sub.example.com"></textarea>
-  </div>
-</div>
-
-              <label for="create_system_prompt">system_prompt (optional)</label>
-              <textarea id="create_system_prompt" rows="4" placeholder="Optionaler System-Prompt..."></textarea>
-
-<div class="grid-3">
-  <div>
-    <label for="create_support_email">support_email (optional)</label>
-    <input id="create_support_email" type="email" placeholder="support@kunde.at" autocapitalize="off" spellcheck="false" />
-  </div>
-
-  <div>
-    <label for="create_support_phone">support_phone (optional)</label>
-    <input id="create_support_phone" type="tel" placeholder="+43 1 234 56 78" />
-  </div>
-
-  <div>
-    <label for="create_support_notes">support_notes (optional)</label>
-    <textarea id="create_support_notes" rows="2" placeholder="z.B. Erreichbar Mo–Fr 9–17 Uhr"></textarea>
-  </div>
-</div>
-
-              <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                <button class="btn" id="cust_create_btn" type="button">Customer erstellen</button>
-                <button class="btn btn-ghost" id="cust_create_clear" type="button">Felder leeren</button>
-              </div>
-
-              <div id="cust_create_status" class="status" aria-live="polite"></div>
-            </form>
-          </div>
-
-          <div class="divider"></div>
-
           <!-- Select + Apply -->
           <div class="section">
             <h3>Customer auswählen</h3>
@@ -173,6 +105,86 @@ sub.example.com"></textarea>
             </div>
 
             <div id="cust_load_status" class="status info" aria-live="polite"></div>
+
+            <details class="collapse-section" style="margin-top:12px;">
+              <summary>+ Neuen Customer erstellen</summary>
+
+              <form id="cust_create_form" autocomplete="off" novalidate>
+                <div class="grid-2">
+                  <div>
+                    <label for="create_name">Name</label>
+                    <input id="create_name" type="text" placeholder="z.B. Musterbetrieb GmbH" />
+                  </div>
+                  <div>
+                    <label for="create_plan">Plan</label>
+                    <select id="create_plan">
+                      <option value="standard">standard</option>
+                      <option value="pro">pro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid-2">
+                  <div>
+                    <label for="create_model">Model (Override, optional)</label>
+                    <input id="create_model" type="text" placeholder="Optionaler Override (Default hängt vom Plan ab)" />
+                    <div class="sub" id="create_model_hint" style="margin-top:6px;"></div>
+                  </div>
+                  <div>
+                    <label for="create_ask_rpm">ask_rpm_limit (RPM, optional)</label>
+                    <input id="create_ask_rpm" type="number" min="0" placeholder="leer = default" />
+                  </div>
+                </div>
+
+                <div class="grid-3">
+                  <div>
+                    <label for="create_monthly_limit">monthly_message_limit (optional)</label>
+                    <input id="create_monthly_limit" type="number" min="0" placeholder="leer = Plan-Default" />
+                    <div class="sub" id="create_monthly_limit_hint" style="margin-top:6px;"></div>
+                  </div>
+
+                  <div>
+                    <label for="create_storage_chunk_limit">storage_chunk_limit (optional)</label>
+                    <input id="create_storage_chunk_limit" type="number" min="0" placeholder="leer = Plan-Default" />
+                    <div class="sub" id="create_storage_limit_hint" style="margin-top:6px;"></div>
+                  </div>
+
+                  <div>
+                    <label for="create_allowed_domains">allowed_domains (optional)</label>
+                    <textarea id="create_allowed_domains" rows="3" placeholder="Eine Domain pro Zeile, z.B.
+example.com
+sub.example.com"></textarea>
+                  </div>
+                </div>
+
+                <label for="create_system_prompt">system_prompt (optional)</label>
+                <textarea id="create_system_prompt" rows="4" placeholder="Optionaler System-Prompt..."></textarea>
+
+                <div class="grid-3">
+                  <div>
+                    <label for="create_support_email">support_email (optional)</label>
+                    <input id="create_support_email" type="email" placeholder="support@kunde.at" autocapitalize="off" spellcheck="false" />
+                  </div>
+
+                  <div>
+                    <label for="create_support_phone">support_phone (optional)</label>
+                    <input id="create_support_phone" type="tel" placeholder="+43 1 234 56 78" />
+                  </div>
+
+                  <div>
+                    <label for="create_support_notes">support_notes (optional)</label>
+                    <textarea id="create_support_notes" rows="2" placeholder="z.B. Erreichbar Mo–Fr 9–17 Uhr"></textarea>
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                  <button class="btn" id="cust_create_btn" type="button">Customer erstellen</button>
+                  <button class="btn btn-ghost" id="cust_create_clear" type="button">Felder leeren</button>
+                </div>
+
+                <div id="cust_create_status" class="status" aria-live="polite"></div>
+              </form>
+            </details>
           </div>
 
           <div class="divider"></div>
@@ -340,7 +352,6 @@ sub.example.com"></textarea>
           <h2>Widget</h2>
           <p class="sub">
             Widget-Design & Texte pro Customer anpassen (Avatar, Farben, Begrüßungen).
-            (Logik + Speichern bauen wir als nächstes in <code>admin.js</code>.)
           </p>
 
           <div class="section" style="margin-bottom:12px;">
@@ -950,19 +961,21 @@ sub.example.com"></textarea>
       const tabs = document.querySelectorAll('.tab-btn');
       const panels = document.querySelectorAll('.panel');
 
+      function activateTab(targetId) {
+        if (!targetId) return;
+        tabs.forEach((b) => b.classList.toggle('active', b.getAttribute('data-panel') === targetId));
+        panels.forEach((p) => p.classList.toggle('active', p.id === targetId));
+      }
+
       tabs.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const targetId = btn.getAttribute('data-panel');
-          if (!targetId) return;
-
-          tabs.forEach((b) => b.classList.remove('active'));
-          panels.forEach((p) => p.classList.remove('active'));
-
-          btn.classList.add('active');
-          const panel = document.getElementById(targetId);
-          if (panel) panel.classList.add('active');
-        });
+        btn.addEventListener('click', () => activateTab(btn.getAttribute('data-panel')));
       });
+
+      // Start-Tab: Beim allerersten Besuch (noch kein Token gespeichert) auf
+      // "Admin-Token" starten, danach direkt auf "Customers".
+      let hasToken = false;
+      try { hasToken = !!localStorage.getItem('admin_ui_token'); } catch (_) {}
+      activateTab(hasToken ? 'panel-customers' : 'panel-token');
     });
   </script>
 </body>

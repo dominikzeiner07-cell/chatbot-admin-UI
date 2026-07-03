@@ -810,3 +810,74 @@ details[open] summary {
     padding: 10px 12px;
   }
 }
+/* ===============================================================
+   Tab-Gruppen (Navigation: Verwaltung / Auswertung / Wissen / System)
+   =============================================================== */
+.tab-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-right: 14px;
+  border-right: 1px solid var(--border);
+}
+
+.tab-group:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.tab-group-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* Destruktiver Tab (Purge) dezent rot markieren */
+.tab-btn-danger {
+  color: var(--error);
+  border-color: var(--storage-error-border);
+}
+
+.tab-btn-danger.active {
+  background: var(--error);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+/* Einklappbare Sektion (z.B. "Neuen Customer erstellen") */
+.collapse-section {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 2px 14px;
+}
+
+.collapse-section > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  padding: 10px 2px;
+  user-select: none;
+}
+
+.collapse-section[open] {
+  padding-bottom: 14px;
+}
+
+.collapse-section[open] > summary {
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 720px) {
+  .tab-group {
+    border-right: none;
+    padding-right: 0;
+    width: 100%;
+  }
+}
