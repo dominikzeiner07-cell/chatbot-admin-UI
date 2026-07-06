@@ -1325,8 +1325,8 @@ function cacheUpsert(customer) {
    Model hints (Plan Defaults)
 ---------------------------------------------- */
 const PLAN_DEFAULT_MODEL = {
-  standard: "gpt-4o-mini",
-  pro: "gpt-4o",
+  standard: "gpt-4.1-mini",
+  pro: "gpt-4.1",
 };
 
 const PLAN_DEFAULT_STORAGE_LIMIT = {
